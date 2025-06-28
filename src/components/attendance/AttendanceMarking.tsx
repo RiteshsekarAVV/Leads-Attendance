@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Clock, CheckSquare, AlertCircle, Users, Calendar } from 'lucide-react';
+import { Clock, CheckSquare, AlertCircle, Users, Calendar, Check, X } from 'lucide-react';
 import { Event, User, AttendanceRecord } from '@/types';
 import { isWithinTimeRange, formatTimeRange, getSessionStatus } from '@/utils/timeUtils';
 import { useFirestore } from '@/hooks/useFirestore';
@@ -56,7 +55,7 @@ export const AttendanceMarking = ({ event, selectedDate, users }: AttendanceMark
       // Update existing record
       const result = await updateAttendance(existingRecord.id, { isPresent });
       if (result.success) {
-        toast.success(`Attendance ${isPresent ? 'marked' : 'unmarked'} for ${user.fullName}`);
+        toast.success(`${user.fullName} marked as ${isPresent ? 'Present' : 'Absent'}`);
       } else {
         toast.error('Failed to update attendance');
       }
@@ -72,7 +71,7 @@ export const AttendanceMarking = ({ event, selectedDate, users }: AttendanceMark
       });
       
       if (result.success) {
-        toast.success(`Attendance ${isPresent ? 'marked' : 'unmarked'} for ${user.fullName}`);
+        toast.success(`${user.fullName} marked as ${isPresent ? 'Present' : 'Absent'}`);
       } else {
         toast.error('Failed to mark attendance');
       }
@@ -138,10 +137,11 @@ export const AttendanceMarking = ({ event, selectedDate, users }: AttendanceMark
           </Alert>
         )}
 
-        <div className="space-y-2">
+        <div className="space-y-3">
           {users.map((user) => {
             const attendanceRecord = getAttendanceRecord(user.id, sessionType);
-            const isPresent = attendanceRecord?.isPresent || false;
+            const isPresent = attendanceRecord?.isPresent;
+            const hasRecord = attendanceRecord !== undefined;
             
             return (
               <div 
@@ -157,26 +157,52 @@ export const AttendanceMarking = ({ event, selectedDate, users }: AttendanceMark
                   </div>
                 </div>
                 
-                <div className="flex items-center space-x-4">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id={`${user.id}-${sessionType}`}
-                      checked={isPresent}
-                      onCheckedChange={(checked) => 
-                        handleAttendanceToggle(user, sessionType, checked as boolean)
-                      }
-                      disabled={!canMark || !session.isActive || loading}
-                    />
-                    <label 
-                      htmlFor={`${user.id}-${sessionType}`}
-                      className="text-sm font-medium cursor-pointer"
-                    >
-                      Present
-                    </label>
-                  </div>
+                <div className="flex items-center space-x-3">
+                  {/* Present Button */}
+                  <Button
+                    size="sm"
+                    variant={isPresent === true ? "default" : "outline"}
+                    onClick={() => handleAttendanceToggle(user, sessionType, true)}
+                    disabled={!canMark || !session.isActive || loading}
+                    className={`${
+                      isPresent === true 
+                        ? 'bg-green-600 hover:bg-green-700 text-white border-green-600' 
+                        : 'border-green-200 text-green-700 hover:bg-green-50'
+                    }`}
+                  >
+                    <Check className="h-4 w-4 mr-1" />
+                    Present
+                  </Button>
                   
-                  {isPresent && (
-                    <CheckSquare className="h-4 w-4 text-green-600" />
+                  {/* Absent Button */}
+                  <Button
+                    size="sm"
+                    variant={isPresent === false ? "default" : "outline"}
+                    onClick={() => handleAttendanceToggle(user, sessionType, false)}
+                    disabled={!canMark || !session.isActive || loading}
+                    className={`${
+                      isPresent === false 
+                        ? 'bg-red-600 hover:bg-red-700 text-white border-red-600' 
+                        : 'border-red-200 text-red-700 hover:bg-red-50'
+                    }`}
+                  >
+                    <X className="h-4 w-4 mr-1" />
+                    Absent
+                  </Button>
+                  
+                  {/* Status Indicator */}
+                  {hasRecord && (
+                    <div className="flex items-center">
+                      {isPresent ? (
+                        <Badge className="bg-green-100 text-green-800 text-xs">
+                          Marked Present
+                        </Badge>
+                      ) : (
+                        <Badge className="bg-red-100 text-red-800 text-xs">
+                          Marked Absent
+                        </Badge>
+                      )}
+                    </div>
                   )}
                 </div>
               </div>
