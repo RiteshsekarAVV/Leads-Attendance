@@ -6,7 +6,6 @@ import { Dashboard } from '@/pages/Dashboard';
 import { Events } from '@/pages/Events';
 import { Users } from '@/pages/Users';
 import { Attendance } from '@/pages/Attendance';
-import { CreateEvent } from '@/pages/CreateEvent';
 import { useAuth } from '@/hooks/useAuth';
 import { Toaster } from '@/components/ui/sonner';
 
@@ -16,10 +15,10 @@ function App() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-20 w-20 border-4 border-blue-200 border-t-blue-600 mx-auto mb-6"></div>
-          <p className="text-gray-700 text-xl font-bold">Loading...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-200 border-t-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-700 text-lg font-medium">Loading...</p>
         </div>
       </div>
     );
@@ -44,15 +43,13 @@ function App() {
         return <Users />;
       case 'attendance':
         return <Attendance />;
-      case 'create-event':
-        return <CreateEvent />;
       default:
         return <Dashboard />;
     }
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-gray-50">
       <Header />
       <TopNavigation activeTab={activeTab} onTabChange={setActiveTab} />
       <main className="w-full">
