@@ -2,9 +2,8 @@ import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AttendanceMarking } from '@/components/attendance/AttendanceMarking';
-import { Calendar, CheckSquare, Clock, Users, Activity, Target } from 'lucide-react';
+import { Calendar, CheckSquare, Users, Activity, Target } from 'lucide-react';
 import { useEventsData, useUsersData } from '@/hooks/useFirestore';
-import { Event } from '@/types';
 import { format } from 'date-fns';
 
 export const Attendance = () => {

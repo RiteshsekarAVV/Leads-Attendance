@@ -1,5 +1,5 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, Calendar, CheckSquare, TrendingUp, Activity, Target } from 'lucide-react';
+import { Users, Calendar, Activity, Target } from 'lucide-react';
 
 interface DashboardStatsProps {
   stats: {

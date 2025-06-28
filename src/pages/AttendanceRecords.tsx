@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Download, Search, Filter, FileText, Calendar, Users, Activity } from 'lucide-react';
+import { Download, Search, Filter, FileText, Users, Activity } from 'lucide-react';
 import { useEventsData, useUsersData, useAttendanceData } from '@/hooks/useFirestore';
 import { exportAttendanceData } from '@/utils/excelUtils';
 import { format } from 'date-fns';

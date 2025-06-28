@@ -8,7 +8,7 @@ import { Switch } from '@/components/ui/switch';
 import { CalendarIcon, Loader2, Clock, Plus } from 'lucide-react';
 import { useFirestore } from '@/hooks/useFirestore';
 import { toast } from 'sonner';
-import { format, addDays, eachDayOfInterval } from 'date-fns';
+import { format, eachDayOfInterval } from 'date-fns';
 
 export const CreateEventModal = () => {
   const [open, setOpen] = useState(false);

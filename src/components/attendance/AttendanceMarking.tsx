@@ -1,12 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Clock, CheckSquare, AlertCircle, Users, Check, X, UserCheck } from 'lucide-react';
-import { Event, User, AttendanceRecord } from '@/types';
+import { Clock, AlertCircle, Users, Check, X, UserCheck } from 'lucide-react';
+import { Event, User } from '@/types';
 import { isWithinTimeRange, formatTimeRange, getSessionStatus } from '@/utils/timeUtils';
 import { useFirestore } from '@/hooks/useFirestore';
 import { useAttendanceData } from '@/hooks/useFirestore';

@@ -1,6 +1,4 @@
 import * as XLSX from 'xlsx';
-import { User } from '@/types';
-
 export interface ExcelUser {
   fullName: string;
   rollNumber: string;

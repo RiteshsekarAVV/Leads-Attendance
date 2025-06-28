@@ -37,7 +37,7 @@ export const formatTimeRange = (startTime: string, endTime: string): string => {
 };
 
 export const getSessionStatus = (startTime: string, endTime: string) => {
-  const isActive = isWithinTimeRange(startTime, endTime);
+  // const isActive = isWithinTimeRange(startTime, endTime);
   const now = new Date();
   const currentTime = now.toLocaleTimeString('en-US', { 
     hour12: false, 

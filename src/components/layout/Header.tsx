@@ -1,5 +1,4 @@
-import { LogOut, Shield, Clock } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Shield, Clock } from 'lucide-react';
 import { getCurrentIST } from '@/utils/timeUtils';
 import { useState, useEffect } from 'react';
 

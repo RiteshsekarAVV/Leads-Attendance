@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Users, Search, Edit, Trash2, Download } from 'lucide-react';
+import { Users, Search, Trash2, Download } from 'lucide-react';
 import { User } from '@/types';
 import { format } from 'date-fns';
 import { useFirestore } from '@/hooks/useFirestore';
