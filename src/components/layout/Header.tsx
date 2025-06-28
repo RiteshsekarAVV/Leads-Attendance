@@ -37,9 +37,9 @@ export const Header = () => {
           <div className="flex items-center space-x-3">
             <div className="hidden sm:block text-right">
               <p className="text-sm font-medium text-gray-900">
-                admin@ignite.com
+                core.admin@ignite.com
               </p>
-              <p className="text-xs text-gray-500 font-medium">Administrator</p>
+              <p className="text-xs text-gray-500 font-medium">Core Team</p>
             </div>
           </div>
         </div>
