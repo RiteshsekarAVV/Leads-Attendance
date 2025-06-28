@@ -10,120 +10,130 @@ export const Users = () => {
   const { users, loading } = useUsersData();
 
   return (
-    <div className="min-h-screen p-3 sm:p-4 lg:p-6 xl:p-8">
-      <div className="max-w-7xl mx-auto space-y-6 sm:space-y-8">
+    <div className="min-h-screen bg-gray-50 p-4 lg:p-6">
+      <div className="max-w-7xl mx-auto space-y-6">
         {/* Header Section */}
-        <div className="card-enhanced rounded-3xl shadow-2xl p-6 sm:p-8 lg:p-12 animate-fade-in-up">
-          <div className="text-center lg:text-left">
-            <div className="flex flex-col lg:flex-row items-center justify-center lg:justify-start space-y-4 lg:space-y-0 lg:space-x-6 mb-8">
-              <div className="p-4 sm:p-6 gradient-purple rounded-3xl shadow-2xl animate-float hover-glow">
-                <UsersIcon className="h-8 w-8 sm:h-10 sm:w-10 text-white" />
-              </div>
-              <div className="text-center lg:text-left">
-                <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-black text-gradient-purple mb-3">
-                  Brigade Leads Management
-                </h1>
-                <div className="w-40 sm:w-48 h-1.5 gradient-purple rounded-full mx-auto lg:mx-0"></div>
-                <p className="text-base sm:text-lg lg:text-xl text-gray-700 max-w-3xl leading-relaxed font-semibold mt-4">
-                  Add, manage, and view all brigade leads and co-leads with comprehensive user management tools
-                </p>
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div className="flex items-center space-x-3 mb-4">
+            <div className="p-2 bg-purple-light rounded-lg">
+              <UsersIcon className="h-6 w-6 icon-purple" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Brigade Leads Management</h1>
+              <p className="text-gray-600">Add, manage, and view all brigade leads and co-leads</p>
+            </div>
+          </div>
+          
+          {/* Quick Stats */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="bg-purple-50 p-4 rounded-lg border border-purple-100">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-purple-light rounded-lg">
+                  <UsersIcon className="h-5 w-5 icon-purple" />
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-purple-900">
+                    {users.length}
+                  </div>
+                  <p className="text-sm text-purple-700 font-medium">Total Users</p>
+                </div>
               </div>
             </div>
-            
-            {/* Quick Stats */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
-              <div className="glass p-4 sm:p-6 rounded-2xl text-center hover-lift border-2 border-white/40">
-                <div className="p-3 gradient-purple rounded-2xl w-fit mx-auto mb-3 shadow-xl">
-                  <UsersIcon className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
+            <div className="bg-pink-50 p-4 rounded-lg border border-pink-100">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-pink-light rounded-lg">
+                  <Activity className="h-5 w-5 icon-pink" />
                 </div>
-                <div className="text-2xl sm:text-3xl font-black text-gradient-purple mb-1">
-                  {users.length}
+                <div>
+                  <div className="text-2xl font-bold text-pink-900">
+                    {new Set(users.map(u => u.brigadeName)).size}
+                  </div>
+                  <p className="text-sm text-pink-700 font-medium">Brigades</p>
                 </div>
-                <p className="text-xs sm:text-sm text-gray-700 font-bold">Total Users</p>
               </div>
-              <div className="glass p-4 sm:p-6 rounded-2xl text-center hover-lift border-2 border-white/40">
-                <div className="p-3 gradient-pink rounded-2xl w-fit mx-auto mb-3 shadow-xl">
-                  <Activity className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
+            </div>
+            <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-blue-light rounded-lg">
+                  <TrendingUp className="h-5 w-5 icon-blue" />
                 </div>
-                <div className="text-2xl sm:text-3xl font-black text-gradient-pink mb-1">
-                  {new Set(users.map(u => u.brigadeName)).size}
+                <div>
+                  <div className="text-2xl font-bold text-blue-900">
+                    {users.filter(u => u.createdAt > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)).length}
+                  </div>
+                  <p className="text-sm text-blue-700 font-medium">This Week</p>
                 </div>
-                <p className="text-xs sm:text-sm text-gray-700 font-bold">Brigades</p>
               </div>
-              <div className="glass p-4 sm:p-6 rounded-2xl text-center hover-lift border-2 border-white/40">
-                <div className="p-3 gradient-blue rounded-2xl w-fit mx-auto mb-3 shadow-xl">
-                  <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
+            </div>
+            <div className="bg-green-50 p-4 rounded-lg border border-green-100">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-green-light rounded-lg">
+                  <Activity className="h-5 w-5 icon-green" />
                 </div>
-                <div className="text-2xl sm:text-3xl font-black text-gradient-blue mb-1">
-                  {users.filter(u => u.createdAt > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)).length}
+                <div>
+                  <div className="text-2xl font-bold text-green-900">
+                    {Math.round((users.length / Math.max(users.length, 1)) * 100)}%
+                  </div>
+                  <p className="text-sm text-green-700 font-medium">Active Rate</p>
                 </div>
-                <p className="text-xs sm:text-sm text-gray-700 font-bold">This Week</p>
-              </div>
-              <div className="glass p-4 sm:p-6 rounded-2xl text-center hover-lift border-2 border-white/40">
-                <div className="p-3 gradient-green rounded-2xl w-fit mx-auto mb-3 shadow-xl">
-                  <Activity className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
-                </div>
-                <div className="text-2xl sm:text-3xl font-black text-gradient-green mb-1">
-                  {Math.round((users.length / Math.max(users.length, 1)) * 100)}%
-                </div>
-                <p className="text-xs sm:text-sm text-gray-700 font-bold">Active Rate</p>
               </div>
             </div>
           </div>
         </div>
 
         {/* Content */}
-        <div className="card-enhanced rounded-3xl shadow-2xl border-2 border-white/50 p-6 sm:p-8 animate-slide-in-left">
-          <Tabs defaultValue="list" className="space-y-8 tabs-enhanced">
-            <TabsList className="tabs-list grid w-full grid-cols-1 sm:grid-cols-3 p-2 rounded-2xl shadow-xl">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <Tabs defaultValue="list" className="space-y-6">
+            <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 bg-gray-100 p-1 rounded-lg">
               <TabsTrigger 
                 value="list" 
-                className="tabs-trigger rounded-xl font-bold transition-all duration-300 flex items-center justify-center space-x-2 p-3"
+                className="rounded-md font-medium transition-all duration-200 flex items-center justify-center space-x-2 py-2"
               >
-                <List className="h-4 w-4" />
+                <div className="p-1 bg-gray-200 rounded-md">
+                  <List className="h-4 w-4 text-gray-600" />
+                </div>
                 <span className="hidden sm:inline">View All</span>
                 <span className="sm:hidden">All</span>
                 <span className="ml-1">({users.length})</span>
               </TabsTrigger>
               <TabsTrigger 
                 value="add"
-                className="tabs-trigger rounded-xl font-bold transition-all duration-300 flex items-center justify-center space-x-2 p-3"
+                className="rounded-md font-medium transition-all duration-200 flex items-center justify-center space-x-2 py-2"
               >
-                <UserPlus className="h-4 w-4" />
+                <div className="p-1 bg-gray-200 rounded-md">
+                  <UserPlus className="h-4 w-4 text-gray-600" />
+                </div>
                 <span className="hidden sm:inline">Add Manually</span>
                 <span className="sm:hidden">Add</span>
               </TabsTrigger>
               <TabsTrigger 
                 value="bulk"
-                className="tabs-trigger rounded-xl font-bold transition-all duration-300 flex items-center justify-center space-x-2 p-3"
+                className="rounded-md font-medium transition-all duration-200 flex items-center justify-center space-x-2 py-2"
               >
-                <Upload className="h-4 w-4" />
+                <div className="p-1 bg-gray-200 rounded-md">
+                  <Upload className="h-4 w-4 text-gray-600" />
+                </div>
                 <span className="hidden sm:inline">Bulk Upload</span>
                 <span className="sm:hidden">Bulk</span>
               </TabsTrigger>
             </TabsList>
             
-            <TabsContent value="list" className="mt-8">
+            <TabsContent value="list">
               {loading ? (
-                <div className="text-center py-16">
-                  <div className="animate-spin rounded-full h-20 w-20 border-4 border-purple-200 border-t-purple-600 mx-auto mb-8"></div>
-                  <p className="text-gray-700 text-2xl font-bold">Loading users...</p>
-                  <div className="flex justify-center space-x-2 mt-6">
-                    <div className="w-3 h-3 bg-purple-600 rounded-full animate-pulse"></div>
-                    <div className="w-3 h-3 bg-pink-600 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
-                    <div className="w-3 h-3 bg-blue-600 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
-                  </div>
+                <div className="text-center py-12">
+                  <div className="animate-spin rounded-full h-12 w-12 border-4 border-purple-200 border-t-purple-600 mx-auto mb-4"></div>
+                  <p className="text-gray-600 text-lg font-medium">Loading users...</p>
                 </div>
               ) : (
                 <UserList users={users} />
               )}
             </TabsContent>
             
-            <TabsContent value="add" className="mt-8">
+            <TabsContent value="add">
               <AddUserForm />
             </TabsContent>
             
-            <TabsContent value="bulk" className="mt-8">
+            <TabsContent value="bulk">
               <BulkUpload />
             </TabsContent>
           </Tabs>
