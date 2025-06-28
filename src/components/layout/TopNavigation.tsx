@@ -1,4 +1,4 @@
-import { Calendar, Users, BarChart3, CheckSquare, Plus } from 'lucide-react';
+import { Calendar, Users, BarChart3, CheckSquare, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface TopNavigationProps {
@@ -34,6 +34,13 @@ const navigation = [
     icon: CheckSquare, 
     color: 'icon-orange',
     bgColor: 'bg-orange-light'
+  },
+  { 
+    id: 'attendance-records', 
+    name: 'Attendance Records', 
+    icon: FileText, 
+    color: 'icon-indigo',
+    bgColor: 'bg-indigo-light'
   }
 ];
 

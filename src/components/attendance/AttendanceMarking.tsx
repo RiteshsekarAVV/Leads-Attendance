@@ -4,8 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Clock, CheckSquare, AlertCircle, Users, Calendar, Check, X } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Clock, CheckSquare, AlertCircle, Users, Check, X, UserCheck } from 'lucide-react';
 import { Event, User, AttendanceRecord } from '@/types';
 import { isWithinTimeRange, formatTimeRange, getSessionStatus } from '@/utils/timeUtils';
 import { useFirestore } from '@/hooks/useFirestore';
@@ -21,9 +21,10 @@ interface AttendanceMarkingProps {
 
 export const AttendanceMarking = ({ event, selectedDate, users }: AttendanceMarkingProps) => {
   const [activeTab, setActiveTab] = useState('fn');
+  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   
   // Automatically select today's date if it exists in the event days, otherwise use the first day
-  const [currentDate, setCurrentDate] = useState<Date>(() => {
+  const [currentDate] = useState<Date>(() => {
     if (selectedDate) return selectedDate;
     
     // Find today's date in the event days
@@ -83,7 +84,7 @@ export const AttendanceMarking = ({ event, selectedDate, users }: AttendanceMark
         userId: user.id,
         sessionType,
         isPresent,
-        markedBy: 'admin' // In a real app, this would be the current user's ID
+        markedBy: 'admin'
       });
       
       if (result.success) {
@@ -91,6 +92,57 @@ export const AttendanceMarking = ({ event, selectedDate, users }: AttendanceMark
       } else {
         toast.error('Failed to mark attendance');
       }
+    }
+  };
+
+  const handleBulkAttendance = async (sessionType: 'FN' | 'AN', isPresent: boolean) => {
+    if (selectedUsers.length === 0) {
+      toast.error('Please select users first');
+      return;
+    }
+
+    const promises = selectedUsers.map(async (userId) => {
+      const user = users.find(u => u.id === userId);
+      if (!user) return;
+
+      const existingRecord = getAttendanceRecord(userId, sessionType);
+      
+      if (existingRecord) {
+        return updateAttendance(existingRecord.id, { isPresent });
+      } else {
+        return markAttendance({
+          eventId: event.id,
+          eventDate: currentDate,
+          userId,
+          sessionType,
+          isPresent,
+          markedBy: 'admin'
+        });
+      }
+    });
+
+    try {
+      await Promise.all(promises);
+      toast.success(`${selectedUsers.length} users marked as ${isPresent ? 'Present' : 'Absent'}`);
+      setSelectedUsers([]);
+    } catch (error) {
+      toast.error('Failed to update bulk attendance');
+    }
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedUsers(users.map(user => user.id));
+    } else {
+      setSelectedUsers([]);
+    }
+  };
+
+  const handleUserSelect = (userId: string, checked: boolean) => {
+    if (checked) {
+      setSelectedUsers(prev => [...prev, userId]);
+    } else {
+      setSelectedUsers(prev => prev.filter(id => id !== userId));
     }
   };
 
@@ -156,6 +208,46 @@ export const AttendanceMarking = ({ event, selectedDate, users }: AttendanceMark
           </Alert>
         )}
 
+        {/* Bulk Actions */}
+        {canMark && session.isActive && (
+          <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center space-x-3">
+                <Checkbox
+                  checked={selectedUsers.length === users.length && users.length > 0}
+                  onCheckedChange={handleSelectAll}
+                />
+                <span className="font-medium text-gray-900">
+                  Select All ({selectedUsers.length} selected)
+                </span>
+              </div>
+              
+              {selectedUsers.length > 0 && (
+                <div className="flex items-center space-x-2">
+                  <Button
+                    size="sm"
+                    onClick={() => handleBulkAttendance(sessionType, true)}
+                    disabled={loading}
+                    className="bg-green-600 hover:bg-green-700 text-white"
+                  >
+                    <UserCheck className="h-4 w-4 mr-1" />
+                    Mark Present ({selectedUsers.length})
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => handleBulkAttendance(sessionType, false)}
+                    disabled={loading}
+                    className="bg-red-600 hover:bg-red-700 text-white"
+                  >
+                    <X className="h-4 w-4 mr-1" />
+                    Mark Absent ({selectedUsers.length})
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         <div className="space-y-3">
           {users.map((user) => {
             const attendanceRecord = getAttendanceRecord(user.id, sessionType);
@@ -167,12 +259,16 @@ export const AttendanceMarking = ({ event, selectedDate, users }: AttendanceMark
                 key={user.id} 
                 className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50"
               >
-                <div className="flex-1">
-                  <div className="flex items-center space-x-4">
-                    <div>
-                      <p className="font-medium text-gray-900">{user.fullName}</p>
-                      <p className="text-sm text-gray-500">{user.rollNumber} • {user.brigadeName}</p>
-                    </div>
+                <div className="flex items-center space-x-4">
+                  {canMark && session.isActive && !hasRecord && (
+                    <Checkbox
+                      checked={selectedUsers.includes(user.id)}
+                      onCheckedChange={(checked) => handleUserSelect(user.id, checked as boolean)}
+                    />
+                  )}
+                  <div>
+                    <p className="font-medium text-gray-900">{user.fullName}</p>
+                    <p className="text-sm text-gray-500">{user.rollNumber} • {user.brigadeName}</p>
                   </div>
                 </div>
                 
@@ -244,33 +340,8 @@ export const AttendanceMarking = ({ event, selectedDate, users }: AttendanceMark
       <CardHeader>
         <CardTitle className="text-xl text-gray-900">Mark Attendance - {event.name}</CardTitle>
         <CardDescription>
-          Mark attendance for brigade leads and co-leads for each session
+          Mark attendance for brigade leads and co-leads for {format(currentDate, 'MMMM d, yyyy')}
         </CardDescription>
-        
-        {/* Date Selector - Only show if there are multiple days */}
-        {event.days.length > 1 && (
-          <div className="flex items-center space-x-4 pt-4">
-            <Calendar className="h-4 w-4 text-gray-500" />
-            <Select 
-              value={format(currentDate, 'yyyy-MM-dd')} 
-              onValueChange={(value) => setCurrentDate(new Date(value))}
-            >
-              <SelectTrigger className="w-64">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {event.days.map((day, index) => (
-                  <SelectItem key={index} value={format(day.date, 'yyyy-MM-dd')}>
-                    {format(day.date, 'EEEE, MMM d, yyyy')}
-                    {isSameDay(day.date, new Date()) && (
-                      <span className="ml-2 text-blue-600 font-medium">(Today)</span>
-                    )}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        )}
       </CardHeader>
       
       <CardContent>

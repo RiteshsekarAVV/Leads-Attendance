@@ -5,6 +5,7 @@ import { Dashboard } from '@/pages/Dashboard';
 import { Events } from '@/pages/Events';
 import { Users } from '@/pages/Users';
 import { Attendance } from '@/pages/Attendance';
+import { AttendanceRecords } from '@/pages/AttendanceRecords';
 import { Toaster } from '@/components/ui/sonner';
 
 function App() {
@@ -20,6 +21,8 @@ function App() {
         return <Users />;
       case 'attendance':
         return <Attendance />;
+      case 'attendance-records':
+        return <AttendanceRecords />;
       default:
         return <Dashboard />;
     }
