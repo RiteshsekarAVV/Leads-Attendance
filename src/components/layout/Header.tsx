@@ -1,11 +1,9 @@
 import { LogOut, Shield, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useAuth } from '@/hooks/useAuth';
 import { getCurrentIST } from '@/utils/timeUtils';
 import { useState, useEffect } from 'react';
 
 export const Header = () => {
-  const { user, logout } = useAuth();
   const [currentTime, setCurrentTime] = useState(getCurrentIST());
 
   useEffect(() => {
@@ -15,10 +13,6 @@ export const Header = () => {
 
     return () => clearInterval(interval);
   }, []);
-
-  const handleLogout = async () => {
-    await logout();
-  };
 
   return (
     <header className="bg-white border-b border-gray-200 px-4 lg:px-6 py-3">
@@ -43,21 +37,11 @@ export const Header = () => {
           
           <div className="flex items-center space-x-3">
             <div className="hidden sm:block text-right">
-              <p className="text-sm font-medium text-gray-900 truncate max-w-32 sm:max-w-none">
-                {user?.email}
+              <p className="text-sm font-medium text-gray-900">
+                admin@ignite.com
               </p>
               <p className="text-xs text-gray-500 font-medium">Administrator</p>
             </div>
-            
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={handleLogout}
-              className="text-red-600 border-red-200 hover:bg-red-50"
-            >
-              <LogOut className="h-4 w-4 sm:mr-2" />
-              <span className="hidden sm:inline">Logout</span>
-            </Button>
           </div>
         </div>
       </div>

@@ -3,18 +3,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { UserPlus, Loader2 } from 'lucide-react';
 import { useFirestore } from '@/hooks/useFirestore';
 import { toast } from 'sonner';
-
-const brigades = [
-  'Tech Brigade',
-  'Media Brigade',
-  'Design Brigade',
-  'Management Brigade',
-  'Sports Brigade',
-];
 
 export const AddUserForm = () => {
   const [fullName, setFullName] = useState('');
@@ -54,85 +45,96 @@ export const AddUserForm = () => {
   };
 
   return (
-    <Card className="max-w-md">
-      <CardHeader>
-        <CardTitle className="flex items-center space-x-2">
-          <UserPlus className="h-5 w-5" />
-          <span>Add Brigade Lead</span>
-        </CardTitle>
-        <CardDescription>
-          Manually add a new brigade lead or co-lead
-        </CardDescription>
-      </CardHeader>
-      
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="fullName">Full Name *</Label>
-            <Input
-              id="fullName"
-              placeholder="Enter full name"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              required
-            />
+    <div className="flex justify-center">
+      <Card className="w-full max-w-md shadow-sm border border-gray-200">
+        <CardHeader className="text-center">
+          <div className="flex justify-center mb-3">
+            <div className="p-3 bg-purple-light rounded-lg">
+              <UserPlus className="h-6 w-6 icon-purple" />
+            </div>
           </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="rollNumber">Roll Number *</Label>
-            <Input
-              id="rollNumber"
-              placeholder="e.g., CS001"
-              value={rollNumber}
-              onChange={(e) => setRollNumber(e.target.value)}
-              required
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="email">Email Address *</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="student@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="brigade">Brigade Name *</Label>
-            <Select value={brigadeName} onValueChange={setBrigadeName}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select a brigade" />
-              </SelectTrigger>
-              <SelectContent>
-                {brigades.map((brigade) => (
-                  <SelectItem key={brigade} value={brigade}>
-                    {brigade}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <CardTitle className="text-xl text-gray-900">Add Brigade Lead</CardTitle>
+          <CardDescription>
+            Manually add a new brigade lead or co-lead
+          </CardDescription>
+        </CardHeader>
+        
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="fullName" className="text-sm font-medium text-gray-700">
+                Full Name *
+              </Label>
+              <Input
+                id="fullName"
+                placeholder="Enter full name"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                required
+                className="h-10"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="rollNumber" className="text-sm font-medium text-gray-700">
+                Roll Number *
+              </Label>
+              <Input
+                id="rollNumber"
+                placeholder="e.g., CS001"
+                value={rollNumber}
+                onChange={(e) => setRollNumber(e.target.value)}
+                required
+                className="h-10"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-sm font-medium text-gray-700">
+                Email Address *
+              </Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="student@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="h-10"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="brigadeName" className="text-sm font-medium text-gray-700">
+                Brigade Name *
+              </Label>
+              <Input
+                id="brigadeName"
+                placeholder="e.g., Tech Brigade"
+                value={brigadeName}
+                onChange={(e) => setBrigadeName(e.target.value)}
+                required
+                className="h-10"
+              />
+            </div>
 
-          <Button 
-            type="submit" 
-            className="w-full" 
-            disabled={loading}
-          >
-            {loading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Adding User...
-              </>
-            ) : (
-              'Add Brigade Lead'
-            )}
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
+            <Button 
+              type="submit" 
+              className="w-full h-10 bg-purple-600 hover:bg-purple-700 text-white font-medium" 
+              disabled={loading}
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Adding User...
+                </>
+              ) : (
+                'Add Brigade Lead'
+              )}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
