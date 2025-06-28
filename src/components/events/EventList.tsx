@@ -2,32 +2,34 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { Calendar, Clock, Users, Edit, Trash2 } from 'lucide-react';
+import { Calendar, Clock, Users, Trash2 } from 'lucide-react';
 import { Event } from '@/types';
-import { format } from 'date-fns';
+import { format, isSameDay } from 'date-fns';
 import { formatTimeRange, getSessionStatus } from '@/utils/timeUtils';
 import { useFirestore } from '@/hooks/useFirestore';
 import { toast } from 'sonner';
 
 interface EventListProps {
   events: Event[];
-  onEventSelect?: (event: Event) => void;
+  onEventSelect?: (event: Event, selectedDate?: Date) => void;
 }
 
 export const EventList = ({ events, onEventSelect }: EventListProps) => {
   const { updateEvent, deleteEvent, loading } = useFirestore();
 
-  const handleSessionToggle = async (event: Event, sessionType: 'fn' | 'an', isActive: boolean) => {
-    const updateData = {
-      [`${sessionType}Session`]: {
-        ...event[`${sessionType}Session`],
+  const handleSessionToggle = async (event: Event, dayIndex: number, sessionType: 'fnSession' | 'anSession', isActive: boolean) => {
+    const updatedDays = [...event.days];
+    updatedDays[dayIndex] = {
+      ...updatedDays[dayIndex],
+      [sessionType]: {
+        ...updatedDays[dayIndex][sessionType],
         isActive
       }
     };
 
-    const result = await updateEvent(event.id, updateData);
+    const result = await updateEvent(event.id, { days: updatedDays });
     if (result.success) {
-      toast.success(`${sessionType.toUpperCase()} session ${isActive ? 'activated' : 'suspended'}`);
+      toast.success(`${sessionType === 'fnSession' ? 'FN' : 'AN'} session ${isActive ? 'activated' : 'suspended'}`);
     } else {
       toast.error('Failed to update session status');
     }
@@ -57,121 +59,140 @@ export const EventList = ({ events, onEventSelect }: EventListProps) => {
   }
 
   return (
-    <div className="space-y-4">
-      {events.map((event) => {
-        const fnStatus = getSessionStatus(event.fnSession.startTime, event.fnSession.endTime);
-        const anStatus = getSessionStatus(event.anSession.startTime, event.anSession.endTime);
-
-        return (
-          <Card key={event.id} className="hover:shadow-lg transition-shadow">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="text-xl">{event.name}</CardTitle>
-                  <CardDescription className="flex items-center space-x-4 mt-2">
-                    <span className="flex items-center">
-                      <Calendar className="h-4 w-4 mr-1" />
-                      {format(event.date, 'MMMM d, yyyy')}
-                    </span>
-                  </CardDescription>
-                </div>
-                <div className="flex space-x-2">
-                  {onEventSelect && (
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => onEventSelect(event)}
-                    >
-                      <Users className="h-4 w-4 mr-2" />
-                      Mark Attendance
-                    </Button>
-                  )}
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => handleDeleteEvent(event.id)}
-                    disabled={loading}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
+    <div className="space-y-6">
+      {events.map((event) => (
+        <Card key={event.id} className="border border-gray-200 shadow-sm">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-xl text-gray-900">{event.name}</CardTitle>
+                <CardDescription className="flex items-center space-x-4 mt-2">
+                  <span className="flex items-center">
+                    <Calendar className="h-4 w-4 mr-1" />
+                    {format(event.startDate, 'MMM d')} - {format(event.endDate, 'MMM d, yyyy')}
+                  </span>
+                  <span className="text-blue-600 font-medium">
+                    {event.days.length} day{event.days.length > 1 ? 's' : ''}
+                  </span>
+                </CardDescription>
               </div>
-            </CardHeader>
-            
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* FN Session */}
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h4 className="font-medium">FN Session</h4>
-                    <div className="flex items-center space-x-2">
-                      <span className="text-sm text-gray-500">Active</span>
-                      <Switch
-                        checked={event.fnSession.isActive}
-                        onCheckedChange={(checked) => handleSessionToggle(event, 'fn', checked)}
-                        disabled={loading}
-                      />
+              <div className="flex space-x-2">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => handleDeleteEvent(event.id)}
+                  disabled={loading}
+                  className="text-red-600 border-red-200 hover:bg-red-50"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </CardHeader>
+          
+          <CardContent>
+            <div className="space-y-4">
+              {event.days.map((day, dayIndex) => {
+                const fnStatus = getSessionStatus(day.fnSession.startTime, day.fnSession.endTime);
+                const anStatus = getSessionStatus(day.anSession.startTime, day.anSession.endTime);
+                const isToday = isSameDay(day.date, new Date());
+
+                return (
+                  <div key={dayIndex} className={`p-4 rounded-lg border ${isToday ? 'border-blue-200 bg-blue-50' : 'border-gray-100 bg-gray-50'}`}>
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center space-x-3">
+                        <h4 className="font-medium text-gray-900">
+                          {format(day.date, 'EEEE, MMM d')}
+                        </h4>
+                        {isToday && (
+                          <Badge className="bg-blue-100 text-blue-800 text-xs">Today</Badge>
+                        )}
+                      </div>
+                      {onEventSelect && (
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => onEventSelect(event, day.date)}
+                          className="text-blue-600 border-blue-200 hover:bg-blue-50"
+                        >
+                          <Users className="h-4 w-4 mr-2" />
+                          Mark Attendance
+                        </Button>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* FN Session */}
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <h5 className="font-medium text-sm text-blue-700">FN Session</h5>
+                          <Switch
+                            checked={day.fnSession.isActive}
+                            onCheckedChange={(checked) => handleSessionToggle(event, dayIndex, 'fnSession', checked)}
+                            disabled={loading}
+                          />
+                        </div>
+                        
+                        <div className="flex items-center space-x-2 text-sm">
+                          <Clock className="h-3 w-3 text-gray-400" />
+                          <span className="text-gray-600">
+                            {formatTimeRange(day.fnSession.startTime, day.fnSession.endTime)}
+                          </span>
+                        </div>
+                        
+                        <div className="flex items-center space-x-2">
+                          <Badge 
+                            variant={fnStatus.status === 'active' ? 'default' : 
+                                    fnStatus.status === 'upcoming' ? 'secondary' : 'destructive'}
+                            className="text-xs"
+                          >
+                            {fnStatus.message}
+                          </Badge>
+                          <span className="text-xs text-gray-500">
+                            {day.fnSession.attendanceCount} attended
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* AN Session */}
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <h5 className="font-medium text-sm text-green-700">AN Session</h5>
+                          <Switch
+                            checked={day.anSession.isActive}
+                            onCheckedChange={(checked) => handleSessionToggle(event, dayIndex, 'anSession', checked)}
+                            disabled={loading}
+                          />
+                        </div>
+                        
+                        <div className="flex items-center space-x-2 text-sm">
+                          <Clock className="h-3 w-3 text-gray-400" />
+                          <span className="text-gray-600">
+                            {formatTimeRange(day.anSession.startTime, day.anSession.endTime)}
+                          </span>
+                        </div>
+                        
+                        <div className="flex items-center space-x-2">
+                          <Badge 
+                            variant={anStatus.status === 'active' ? 'default' : 
+                                    anStatus.status === 'upcoming' ? 'secondary' : 'destructive'}
+                            className="text-xs"
+                          >
+                            {anStatus.message}
+                          </Badge>
+                          <span className="text-xs text-gray-500">
+                            {day.anSession.attendanceCount} attended
+                          </span>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <Clock className="h-4 w-4 text-gray-400" />
-                    <span className="text-sm">
-                      {formatTimeRange(event.fnSession.startTime, event.fnSession.endTime)}
-                    </span>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <Badge 
-                      variant={fnStatus.status === 'active' ? 'default' : 
-                              fnStatus.status === 'upcoming' ? 'secondary' : 'destructive'}
-                    >
-                      {fnStatus.message}
-                    </Badge>
-                    <span className="text-sm text-gray-500">
-                      {event.fnSession.attendanceCount} attended
-                    </span>
-                  </div>
-                </div>
-
-                {/* AN Session */}
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h4 className="font-medium">AN Session</h4>
-                    <div className="flex items-center space-x-2">
-                      <span className="text-sm text-gray-500">Active</span>
-                      <Switch
-                        checked={event.anSession.isActive}
-                        onCheckedChange={(checked) => handleSessionToggle(event, 'an', checked)}
-                        disabled={loading}
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <Clock className="h-4 w-4 text-gray-400" />
-                    <span className="text-sm">
-                      {formatTimeRange(event.anSession.startTime, event.anSession.endTime)}
-                    </span>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <Badge 
-                      variant={anStatus.status === 'active' ? 'default' : 
-                              anStatus.status === 'upcoming' ? 'secondary' : 'destructive'}
-                    >
-                      {anStatus.message}
-                    </Badge>
-                    <span className="text-sm text-gray-500">
-                      {event.anSession.attendanceCount} attended
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        );
-      })}
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      ))}
     </div>
   );
 };

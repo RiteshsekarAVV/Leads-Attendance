@@ -10,10 +10,16 @@ export interface User {
 export interface Event {
   id: string;
   name: string;
+  startDate: Date;
+  endDate: Date;
+  days: EventDay[];
+  createdAt: Date;
+}
+
+export interface EventDay {
   date: Date;
   fnSession: Session;
   anSession: Session;
-  createdAt: Date;
 }
 
 export interface Session {
@@ -26,6 +32,7 @@ export interface Session {
 export interface AttendanceRecord {
   id: string;
   eventId: string;
+  eventDate: Date;
   userId: string;
   sessionType: 'FN' | 'AN';
   isPresent: boolean;

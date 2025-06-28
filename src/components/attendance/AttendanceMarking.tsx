@@ -5,40 +5,47 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Clock, CheckSquare, AlertCircle, Users } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Clock, CheckSquare, AlertCircle, Users, Calendar } from 'lucide-react';
 import { Event, User, AttendanceRecord } from '@/types';
 import { isWithinTimeRange, formatTimeRange, getSessionStatus } from '@/utils/timeUtils';
 import { useFirestore } from '@/hooks/useFirestore';
 import { useAttendanceData } from '@/hooks/useFirestore';
 import { toast } from 'sonner';
+import { format, isSameDay } from 'date-fns';
 
 interface AttendanceMarkingProps {
   event: Event;
+  selectedDate?: Date;
   users: User[];
 }
 
-export const AttendanceMarking = ({ event, users }: AttendanceMarkingProps) => {
+export const AttendanceMarking = ({ event, selectedDate, users }: AttendanceMarkingProps) => {
   const [activeTab, setActiveTab] = useState('fn');
+  const [currentDate, setCurrentDate] = useState<Date>(selectedDate || event.days[0]?.date || new Date());
   const { markAttendance, updateAttendance, loading } = useFirestore();
   const { attendance } = useAttendanceData(event.id);
 
-  const fnCanMark = event.fnSession.isActive && isWithinTimeRange(
-    event.fnSession.startTime, 
-    event.fnSession.endTime
+  const currentDay = event.days.find(day => isSameDay(day.date, currentDate));
+
+  const fnCanMark = currentDay?.fnSession.isActive && isWithinTimeRange(
+    currentDay.fnSession.startTime, 
+    currentDay.fnSession.endTime
   );
   
-  const anCanMark = event.anSession.isActive && isWithinTimeRange(
-    event.anSession.startTime, 
-    event.anSession.endTime
+  const anCanMark = currentDay?.anSession.isActive && isWithinTimeRange(
+    currentDay.anSession.startTime, 
+    currentDay.anSession.endTime
   );
 
-  const fnStatus = getSessionStatus(event.fnSession.startTime, event.fnSession.endTime);
-  const anStatus = getSessionStatus(event.anSession.startTime, event.anSession.endTime);
+  const fnStatus = currentDay ? getSessionStatus(currentDay.fnSession.startTime, currentDay.fnSession.endTime) : null;
+  const anStatus = currentDay ? getSessionStatus(currentDay.anSession.startTime, currentDay.anSession.endTime) : null;
 
   const getAttendanceRecord = (userId: string, sessionType: 'FN' | 'AN') => {
     return attendance.find(record => 
       record.userId === userId && 
-      record.sessionType === sessionType
+      record.sessionType === sessionType &&
+      isSameDay(record.eventDate, currentDate)
     );
   };
 
@@ -57,6 +64,7 @@ export const AttendanceMarking = ({ event, users }: AttendanceMarkingProps) => {
       // Create new record
       const result = await markAttendance({
         eventId: event.id,
+        eventDate: currentDate,
         userId: user.id,
         sessionType,
         isPresent,
@@ -72,16 +80,25 @@ export const AttendanceMarking = ({ event, users }: AttendanceMarkingProps) => {
   };
 
   const renderSessionContent = (sessionType: 'FN' | 'AN') => {
+    if (!currentDay) {
+      return (
+        <div className="text-center py-8">
+          <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <p className="text-gray-500">No session data available for this date.</p>
+        </div>
+      );
+    }
+
     const canMark = sessionType === 'FN' ? fnCanMark : anCanMark;
-    const session = sessionType === 'FN' ? event.fnSession : event.anSession;
+    const session = sessionType === 'FN' ? currentDay.fnSession : currentDay.anSession;
     const status = sessionType === 'FN' ? fnStatus : anStatus;
     
     return (
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-lg font-medium">
-              {sessionType} Session - {event.name}
+            <h3 className="text-lg font-medium text-gray-900">
+              {sessionType} Session - {format(currentDate, 'MMM d, yyyy')}
             </h3>
             <p className="text-sm text-gray-500">
               {formatTimeRange(session.startTime, session.endTime)}
@@ -90,15 +107,15 @@ export const AttendanceMarking = ({ event, users }: AttendanceMarkingProps) => {
           
           <div className="flex items-center space-x-2">
             <Badge 
-              variant={status.status === 'active' ? 'default' : 
-                      status.status === 'upcoming' ? 'secondary' : 'destructive'}
+              variant={status?.status === 'active' ? 'default' : 
+                      status?.status === 'upcoming' ? 'secondary' : 'destructive'}
             >
-              {status.message}
+              {status?.message}
             </Badge>
             {session.isActive ? (
-              <Badge variant="outline" className="text-green-600">Active</Badge>
+              <Badge variant="outline" className="text-green-600 border-green-200">Active</Badge>
             ) : (
-              <Badge variant="outline" className="text-red-600">Suspended</Badge>
+              <Badge variant="outline" className="text-red-600 border-red-200">Suspended</Badge>
             )}
           </div>
         </div>
@@ -129,12 +146,12 @@ export const AttendanceMarking = ({ event, users }: AttendanceMarkingProps) => {
             return (
               <div 
                 key={user.id} 
-                className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50"
+                className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50"
               >
                 <div className="flex-1">
                   <div className="flex items-center space-x-4">
                     <div>
-                      <p className="font-medium">{user.fullName}</p>
+                      <p className="font-medium text-gray-900">{user.fullName}</p>
                       <p className="text-sm text-gray-500">{user.rollNumber} • {user.brigadeName}</p>
                     </div>
                   </div>
@@ -178,12 +195,34 @@ export const AttendanceMarking = ({ event, users }: AttendanceMarkingProps) => {
   };
 
   return (
-    <Card>
+    <Card className="shadow-sm border border-gray-200">
       <CardHeader>
-        <CardTitle>Mark Attendance - {event.name}</CardTitle>
+        <CardTitle className="text-xl text-gray-900">Mark Attendance - {event.name}</CardTitle>
         <CardDescription>
           Mark attendance for brigade leads and co-leads for each session
         </CardDescription>
+        
+        {/* Date Selector */}
+        {event.days.length > 1 && (
+          <div className="flex items-center space-x-4 pt-4">
+            <Calendar className="h-4 w-4 text-gray-500" />
+            <Select 
+              value={format(currentDate, 'yyyy-MM-dd')} 
+              onValueChange={(value) => setCurrentDate(new Date(value))}
+            >
+              <SelectTrigger className="w-64">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {event.days.map((day, index) => (
+                  <SelectItem key={index} value={format(day.date, 'yyyy-MM-dd')}>
+                    {format(day.date, 'EEEE, MMM d, yyyy')}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
       </CardHeader>
       
       <CardContent>
@@ -191,17 +230,17 @@ export const AttendanceMarking = ({ event, users }: AttendanceMarkingProps) => {
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="fn" className="flex items-center space-x-2">
               <span>FN Session</span>
-              {event.fnSession.attendanceCount > 0 && (
+              {currentDay && currentDay.fnSession.attendanceCount > 0 && (
                 <Badge variant="secondary" className="ml-2">
-                  {event.fnSession.attendanceCount}
+                  {currentDay.fnSession.attendanceCount}
                 </Badge>
               )}
             </TabsTrigger>
             <TabsTrigger value="an" className="flex items-center space-x-2">
               <span>AN Session</span>
-              {event.anSession.attendanceCount > 0 && (
+              {currentDay && currentDay.anSession.attendanceCount > 0 && (
                 <Badge variant="secondary" className="ml-2">
-                  {event.anSession.attendanceCount}
+                  {currentDay.anSession.attendanceCount}
                 </Badge>
               )}
             </TabsTrigger>
