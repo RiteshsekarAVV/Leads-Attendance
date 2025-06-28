@@ -21,7 +21,23 @@ interface AttendanceMarkingProps {
 
 export const AttendanceMarking = ({ event, selectedDate, users }: AttendanceMarkingProps) => {
   const [activeTab, setActiveTab] = useState('fn');
-  const [currentDate, setCurrentDate] = useState<Date>(selectedDate || event.days[0]?.date || new Date());
+  
+  // Automatically select today's date if it exists in the event days, otherwise use the first day
+  const [currentDate, setCurrentDate] = useState<Date>(() => {
+    if (selectedDate) return selectedDate;
+    
+    // Find today's date in the event days
+    const today = new Date();
+    const todayInEvent = event.days.find(day => isSameDay(day.date, today));
+    
+    if (todayInEvent) {
+      return today;
+    }
+    
+    // If today is not in the event, use the first day
+    return event.days[0]?.date || new Date();
+  });
+  
   const { markAttendance, updateAttendance, loading } = useFirestore();
   const { attendance } = useAttendanceData(event.id);
 
@@ -111,9 +127,12 @@ export const AttendanceMarking = ({ event, selectedDate, users }: AttendanceMark
             >
               {status?.message}
             </Badge>
-            {session.isActive ? (
+            {/* Only show Active badge if session is active AND within time range */}
+            {session.isActive && status?.status === 'active' && (
               <Badge variant="outline" className="text-green-600 border-green-200">Active</Badge>
-            ) : (
+            )}
+            {/* Show Suspended badge if session is not active */}
+            {!session.isActive && (
               <Badge variant="outline" className="text-red-600 border-red-200">Suspended</Badge>
             )}
           </div>
@@ -163,12 +182,12 @@ export const AttendanceMarking = ({ event, selectedDate, users }: AttendanceMark
                     size="sm"
                     variant={isPresent === true ? "default" : "outline"}
                     onClick={() => handleAttendanceToggle(user, sessionType, true)}
-                    disabled={!canMark || !session.isActive || loading}
+                    disabled={!canMark || !session.isActive || loading || hasRecord}
                     className={`${
                       isPresent === true 
                         ? 'bg-green-600 hover:bg-green-700 text-white border-green-600' 
                         : 'border-green-200 text-green-700 hover:bg-green-50'
-                    }`}
+                    } ${hasRecord ? 'opacity-50 cursor-not-allowed' : ''}`}
                   >
                     <Check className="h-4 w-4 mr-1" />
                     Present
@@ -179,12 +198,12 @@ export const AttendanceMarking = ({ event, selectedDate, users }: AttendanceMark
                     size="sm"
                     variant={isPresent === false ? "default" : "outline"}
                     onClick={() => handleAttendanceToggle(user, sessionType, false)}
-                    disabled={!canMark || !session.isActive || loading}
+                    disabled={!canMark || !session.isActive || loading || hasRecord}
                     className={`${
                       isPresent === false 
                         ? 'bg-red-600 hover:bg-red-700 text-white border-red-600' 
                         : 'border-red-200 text-red-700 hover:bg-red-50'
-                    }`}
+                    } ${hasRecord ? 'opacity-50 cursor-not-allowed' : ''}`}
                   >
                     <X className="h-4 w-4 mr-1" />
                     Absent
@@ -228,7 +247,7 @@ export const AttendanceMarking = ({ event, selectedDate, users }: AttendanceMark
           Mark attendance for brigade leads and co-leads for each session
         </CardDescription>
         
-        {/* Date Selector */}
+        {/* Date Selector - Only show if there are multiple days */}
         {event.days.length > 1 && (
           <div className="flex items-center space-x-4 pt-4">
             <Calendar className="h-4 w-4 text-gray-500" />
@@ -243,6 +262,9 @@ export const AttendanceMarking = ({ event, selectedDate, users }: AttendanceMark
                 {event.days.map((day, index) => (
                   <SelectItem key={index} value={format(day.date, 'yyyy-MM-dd')}>
                     {format(day.date, 'EEEE, MMM d, yyyy')}
+                    {isSameDay(day.date, new Date()) && (
+                      <span className="ml-2 text-blue-600 font-medium">(Today)</span>
+                    )}
                   </SelectItem>
                 ))}
               </SelectContent>
