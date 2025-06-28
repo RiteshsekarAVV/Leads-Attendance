@@ -172,12 +172,23 @@ export const useEventsData = () => {
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const eventsData: Event[] = [];
       querySnapshot.forEach((doc) => {
-        eventsData.push({
+        const data = doc.data();
+        
+        // Safely convert Firestore timestamps to Date objects
+        const eventData: Event = {
           id: doc.id,
-          ...doc.data(),
-          date: doc.data().date.toDate(),
-          createdAt: doc.data().createdAt.toDate()
-        } as Event);
+          ...data,
+          startDate: data.startDate?.toDate ? data.startDate.toDate() : new Date(data.startDate || Date.now()),
+          endDate: data.endDate?.toDate ? data.endDate.toDate() : new Date(data.endDate || Date.now()),
+          createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(data.createdAt || Date.now()),
+          // Handle days array if it exists
+          days: data.days ? data.days.map((day: any) => ({
+            ...day,
+            date: day.date?.toDate ? day.date.toDate() : new Date(day.date || Date.now())
+          })) : []
+        } as Event;
+        
+        eventsData.push(eventData);
       });
       setEvents(eventsData);
       setLoading(false);
@@ -199,10 +210,12 @@ export const useUsersData = () => {
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const usersData: User[] = [];
       querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        
         usersData.push({
           id: doc.id,
-          ...doc.data(),
-          createdAt: doc.data().createdAt.toDate()
+          ...data,
+          createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(data.createdAt || Date.now())
         } as User);
       });
       setUsers(usersData);
@@ -234,10 +247,13 @@ export const useAttendanceData = (eventId?: string) => {
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const attendanceData: AttendanceRecord[] = [];
       querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        
         attendanceData.push({
           id: doc.id,
-          ...doc.data(),
-          markedAt: doc.data().markedAt.toDate()
+          ...data,
+          eventDate: data.eventDate?.toDate ? data.eventDate.toDate() : new Date(data.eventDate || Date.now()),
+          markedAt: data.markedAt?.toDate ? data.markedAt.toDate() : new Date(data.markedAt || Date.now())
         } as AttendanceRecord);
       });
       setAttendance(attendanceData);
