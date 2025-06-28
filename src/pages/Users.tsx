@@ -3,8 +3,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { UserList } from '@/components/users/UserList';
 import { AddUserForm } from '@/components/users/AddUserForm';
 import { BulkUpload } from '@/components/users/BulkUpload';
+import { BrigadeManagement } from '@/components/brigades/BrigadeManagement';
 import { useUsersData } from '@/hooks/useFirestore';
-import { Users as UsersIcon, UserPlus, Upload, List, Activity, TrendingUp } from 'lucide-react';
+import { Users as UsersIcon, UserPlus, Upload, List, Activity, TrendingUp, Building2 } from 'lucide-react';
 
 export const Users = () => {
   const { users, loading } = useUsersData();
@@ -84,7 +85,7 @@ export const Users = () => {
         {/* Content */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <Tabs defaultValue="list" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 bg-gray-100 p-1 rounded-lg">
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 bg-gray-100 p-1 rounded-lg">
               <TabsTrigger 
                 value="list" 
                 className="rounded-md font-medium transition-all duration-200 flex items-center justify-center space-x-2 py-2"
@@ -116,6 +117,16 @@ export const Users = () => {
                 <span className="hidden sm:inline">Bulk Upload</span>
                 <span className="sm:hidden">Bulk</span>
               </TabsTrigger>
+              <TabsTrigger 
+                value="brigades"
+                className="rounded-md font-medium transition-all duration-200 flex items-center justify-center space-x-2 py-2"
+              >
+                <div className="p-1 bg-gray-200 rounded-md">
+                  <Building2 className="h-4 w-4 text-gray-600" />
+                </div>
+                <span className="hidden sm:inline">Brigades</span>
+                <span className="sm:hidden">Brigades</span>
+              </TabsTrigger>
             </TabsList>
             
             <TabsContent value="list">
@@ -135,6 +146,10 @@ export const Users = () => {
             
             <TabsContent value="bulk">
               <BulkUpload />
+            </TabsContent>
+            
+            <TabsContent value="brigades">
+              <BrigadeManagement />
             </TabsContent>
           </Tabs>
         </div>

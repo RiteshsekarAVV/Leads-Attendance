@@ -3,8 +3,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { UserPlus, Loader2 } from 'lucide-react';
-import { useFirestore } from '@/hooks/useFirestore';
+import { useFirestore, useBrigadesData } from '@/hooks/useFirestore';
 import { toast } from 'sonner';
 
 export const AddUserForm = () => {
@@ -14,6 +15,7 @@ export const AddUserForm = () => {
   const [brigadeName, setBrigadeName] = useState('');
   
   const { addUser, loading } = useFirestore();
+  const { brigades } = useBrigadesData();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -108,20 +110,31 @@ export const AddUserForm = () => {
               <Label htmlFor="brigadeName" className="text-sm font-medium text-gray-700">
                 Brigade Name *
               </Label>
-              <Input
-                id="brigadeName"
-                placeholder="e.g., Tech Brigade"
-                value={brigadeName}
-                onChange={(e) => setBrigadeName(e.target.value)}
-                required
-                className="h-10"
-              />
+              <Select value={brigadeName} onValueChange={setBrigadeName}>
+                <SelectTrigger className="h-10">
+                  <SelectValue placeholder="Select a brigade" />
+                </SelectTrigger>
+                <SelectContent>
+                  {brigades
+                    .filter(brigade => brigade.isActive)
+                    .map((brigade) => (
+                      <SelectItem key={brigade.id} value={brigade.name}>
+                        {brigade.name}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+              {brigades.length === 0 && (
+                <p className="text-xs text-amber-600">
+                  No brigades available. Create a brigade first in the Brigades tab.
+                </p>
+              )}
             </div>
 
             <Button 
               type="submit" 
               className="w-full h-10 bg-purple-600 hover:bg-purple-700 text-white font-medium" 
-              disabled={loading}
+              disabled={loading || brigades.length === 0}
             >
               {loading ? (
                 <>

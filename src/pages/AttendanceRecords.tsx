@@ -104,7 +104,18 @@ export const AttendanceRecords = () => {
       return;
     }
     
-    exportAttendanceData(exportData, `attendance_records_${format(new Date(), 'yyyy-MM-dd')}`);
+    // Generate filename based on filters
+    const eventName = selectedEvent === 'all' ? 'All Events' : 
+      events.find(e => e.id === selectedEvent)?.name || 'Unknown Event';
+    const brigadeName = selectedBrigade === 'all' ? 'All Brigades' : selectedBrigade;
+    const statusName = selectedStatus === 'all' ? 'All Status' : 
+      selectedStatus === 'present' ? 'Present' : 'Absent';
+    const startDateStr = startDate || 'No Start Date';
+    const endDateStr = endDate || 'No End Date';
+    
+    const filename = `${eventName}+${brigadeName}+${statusName}+${startDateStr}+${endDateStr}`;
+    
+    exportAttendanceData(exportData, filename);
     toast.success(`Exported ${exportData.length} attendance records`);
   };
 

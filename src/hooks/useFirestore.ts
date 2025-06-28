@@ -13,7 +13,7 @@ import {
   writeBatch
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { Event, User, AttendanceRecord } from '@/types';
+import { Event, User, AttendanceRecord, Brigade } from '@/types';
 
 export const useFirestore = () => {
   const [loading, setLoading] = useState(false);
@@ -120,6 +120,34 @@ export const useFirestore = () => {
     }
   };
 
+  // Brigades
+  const addBrigade = async (brigadeData: Omit<Brigade, 'id' | 'createdAt'>) => {
+    setLoading(true);
+    try {
+      const docRef = await addDoc(collection(db, 'brigades'), {
+        ...brigadeData,
+        createdAt: new Date()
+      });
+      setLoading(false);
+      return { success: true, id: docRef.id };
+    } catch (error: any) {
+      setLoading(false);
+      return { success: false, error: error.message };
+    }
+  };
+
+  const deleteBrigade = async (brigadeId: string) => {
+    setLoading(true);
+    try {
+      await deleteDoc(doc(db, 'brigades', brigadeId));
+      setLoading(false);
+      return { success: true };
+    } catch (error: any) {
+      setLoading(false);
+      return { success: false, error: error.message };
+    }
+  };
+
   // Attendance
   const markAttendance = async (attendanceData: Omit<AttendanceRecord, 'id' | 'markedAt'>) => {
     setLoading(true);
@@ -157,6 +185,8 @@ export const useFirestore = () => {
     addUsersBulk,
     updateUser,
     deleteUser,
+    addBrigade,
+    deleteBrigade,
     markAttendance,
     updateAttendance
   };
@@ -226,6 +256,34 @@ export const useUsersData = () => {
   }, []);
 
   return { users, loading };
+};
+
+export const useBrigadesData = () => {
+  const [brigades, setBrigades] = useState<Brigade[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const q = query(collection(db, 'brigades'), orderBy('createdAt', 'desc'));
+    
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+      const brigadesData: Brigade[] = [];
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        
+        brigadesData.push({
+          id: doc.id,
+          ...data,
+          createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(data.createdAt || Date.now())
+        } as Brigade);
+      });
+      setBrigades(brigadesData);
+      setLoading(false);
+    });
+
+    return unsubscribe;
+  }, []);
+
+  return { brigades, loading };
 };
 
 export const useAttendanceData = (eventId?: string) => {

@@ -130,9 +130,14 @@ export const AttendanceMarking = ({ event, selectedDate, users }: AttendanceMark
     }
   };
 
-  const handleSelectAll = (checked: boolean) => {
+  const getUnmarkedUsers = (sessionType: 'FN' | 'AN') => {
+    return users.filter(user => !getAttendanceRecord(user.id, sessionType));
+  };
+
+  const handleSelectAllUnmarked = (sessionType: 'FN' | 'AN', checked: boolean) => {
     if (checked) {
-      setSelectedUsers(users.map(user => user.id));
+      const unmarkedUsers = getUnmarkedUsers(sessionType);
+      setSelectedUsers(unmarkedUsers.map(user => user.id));
     } else {
       setSelectedUsers([]);
     }
@@ -159,6 +164,7 @@ export const AttendanceMarking = ({ event, selectedDate, users }: AttendanceMark
     const canMark = sessionType === 'FN' ? fnCanMark : anCanMark;
     const session = sessionType === 'FN' ? currentDay.fnSession : currentDay.anSession;
     const status = sessionType === 'FN' ? fnStatus : anStatus;
+    const unmarkedUsers = getUnmarkedUsers(sessionType);
     
     return (
       <div className="space-y-4">
@@ -209,16 +215,16 @@ export const AttendanceMarking = ({ event, selectedDate, users }: AttendanceMark
         )}
 
         {/* Bulk Actions */}
-        {canMark && session.isActive && (
+        {canMark && session.isActive && unmarkedUsers.length > 0 && (
           <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center space-x-3">
                 <Checkbox
-                  checked={selectedUsers.length === users.length && users.length > 0}
-                  onCheckedChange={handleSelectAll}
+                  checked={selectedUsers.length === unmarkedUsers.length && unmarkedUsers.length > 0}
+                  onCheckedChange={(checked) => handleSelectAllUnmarked(sessionType, checked as boolean)}
                 />
                 <span className="font-medium text-gray-900">
-                  Select All ({selectedUsers.length} selected)
+                  Select All Unmarked ({selectedUsers.length} selected)
                 </span>
               </div>
               

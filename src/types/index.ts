@@ -7,6 +7,14 @@ export interface User {
   createdAt: Date;
 }
 
+export interface Brigade {
+  id: string;
+  name: string;
+  description: string;
+  isActive: boolean;
+  createdAt: Date;
+}
+
 export interface Event {
   id: string;
   name: string;
