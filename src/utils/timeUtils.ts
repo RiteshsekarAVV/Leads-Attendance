@@ -79,12 +79,11 @@ export const isSameDay = (date1: Date, date2: Date): boolean => {
 };
 
 export const isToday = (date: Date): boolean => {
-  
+  const today = new Date();
   return isSameDay(date, today);
 };
 
 export const getTodaysEventDays = (events: any[]) => {
-  const today = new Date();
   const todaysEvents: any[] = [];
   
   events.forEach(event => {
