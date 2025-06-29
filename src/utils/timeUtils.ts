@@ -36,9 +36,19 @@ export const formatTimeRange = (startTime: string, endTime: string): string => {
   return `${formatTime(startTime)} - ${formatTime(endTime)}`;
 };
 
-export const getSessionStatus = (startTime: string, endTime: string) => {
-  // const isActive = isWithinTimeRange(startTime, endTime);
+export const getSessionStatus = (startTime: string, endTime: string, eventDate: Date) => {
   const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const eventDay = new Date(eventDate.getFullYear(), eventDate.getMonth(), eventDate.getDate());
+  
+  // If event is not today, return appropriate status
+  if (eventDay.getTime() > today.getTime()) {
+    return { status: 'upcoming', message: 'Event is in the future' };
+  } else if (eventDay.getTime() < today.getTime()) {
+    return { status: 'ended', message: 'Event has passed' };
+  }
+  
+  // Event is today, check time
   const currentTime = now.toLocaleTimeString('en-US', { 
     hour12: false, 
     timeZone: 'Asia/Kolkata' 
@@ -60,4 +70,35 @@ export const getSessionStatus = (startTime: string, endTime: string) => {
   } else {
     return { status: 'active', message: 'Session is active' };
   }
+};
+
+export const isSameDay = (date1: Date, date2: Date): boolean => {
+  return date1.getFullYear() === date2.getFullYear() &&
+         date1.getMonth() === date2.getMonth() &&
+         date1.getDate() === date2.getDate();
+};
+
+export const isToday = (date: Date): boolean => {
+  const today = new Date();
+  return isSameDay(date, today);
+};
+
+export const getTodaysEventDays = (events: any[]) => {
+  const today = new Date();
+  const todaysEvents: any[] = [];
+  
+  events.forEach(event => {
+    event.days.forEach((day: any) => {
+      if (isToday(day.date)) {
+        todaysEvents.push({
+          event,
+          day,
+          eventId: event.id,
+          eventName: event.name
+        });
+      }
+    });
+  });
+  
+  return todaysEvents;
 };

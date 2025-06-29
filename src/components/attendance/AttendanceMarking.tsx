@@ -7,7 +7,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Clock, AlertCircle, Users, Check, X, UserCheck } from 'lucide-react';
 import { Event, User } from '@/types';
-import { isWithinTimeRange, formatTimeRange, getSessionStatus } from '@/utils/timeUtils';
+import { isWithinTimeRange, formatTimeRange, getSessionStatus, isToday } from '@/utils/timeUtils';
 import { useFirestore } from '@/hooks/useFirestore';
 import { useAttendanceData } from '@/hooks/useFirestore';
 import { toast } from 'sonner';
@@ -23,20 +23,22 @@ export const AttendanceMarking = ({ event, selectedDate, users }: AttendanceMark
   const [activeTab, setActiveTab] = useState('fn');
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   
-  // Automatically select today's date if it exists in the event days, otherwise use the first day
+  // Only allow marking attendance for today's date
+  const today = new Date();
   const [currentDate] = useState<Date>(() => {
-    if (selectedDate) return selectedDate;
+    if (selectedDate && isToday(selectedDate)) {
+      return selectedDate;
+    }
     
     // Find today's date in the event days
-    const today = new Date();
     const todayInEvent = event.days.find(day => isSameDay(day.date, today));
     
     if (todayInEvent) {
       return today;
     }
     
-    // If today is not in the event, use the first day
-    return event.days[0]?.date || new Date();
+    // If today is not in the event, don't allow attendance marking
+    return today;
   });
   
   const { markAttendance, updateAttendance, loading } = useFirestore();
@@ -44,18 +46,21 @@ export const AttendanceMarking = ({ event, selectedDate, users }: AttendanceMark
 
   const currentDay = event.days.find(day => isSameDay(day.date, currentDate));
 
-  const fnCanMark = currentDay?.fnSession.isActive && isWithinTimeRange(
+  // Only allow attendance marking if the event day is today
+  const canMarkToday = currentDay && isToday(currentDate);
+
+  const fnCanMark = canMarkToday && currentDay?.fnSession.isActive && isWithinTimeRange(
     currentDay.fnSession.startTime, 
     currentDay.fnSession.endTime
   );
   
-  const anCanMark = currentDay?.anSession.isActive && isWithinTimeRange(
+  const anCanMark = canMarkToday && currentDay?.anSession.isActive && isWithinTimeRange(
     currentDay.anSession.startTime, 
     currentDay.anSession.endTime
   );
 
-  const fnStatus = currentDay ? getSessionStatus(currentDay.fnSession.startTime, currentDay.fnSession.endTime) : null;
-  const anStatus = currentDay ? getSessionStatus(currentDay.anSession.startTime, currentDay.anSession.endTime) : null;
+  const fnStatus = currentDay ? getSessionStatus(currentDay.fnSession.startTime, currentDay.fnSession.endTime, currentDay.date) : null;
+  const anStatus = currentDay ? getSessionStatus(currentDay.anSession.startTime, currentDay.anSession.endTime, currentDay.date) : null;
 
   const getAttendanceRecord = (userId: string, sessionType: 'FN' | 'AN') => {
     return attendance.find(record => 
@@ -66,6 +71,11 @@ export const AttendanceMarking = ({ event, selectedDate, users }: AttendanceMark
   };
 
   const handleAttendanceToggle = async (user: User, sessionType: 'FN' | 'AN', isPresent: boolean) => {
+    if (!canMarkToday) {
+      toast.error('Attendance can only be marked for today\'s events');
+      return;
+    }
+
     const existingRecord = getAttendanceRecord(user.id, sessionType);
     
     if (existingRecord) {
@@ -96,6 +106,11 @@ export const AttendanceMarking = ({ event, selectedDate, users }: AttendanceMark
   };
 
   const handleBulkAttendance = async (sessionType: 'FN' | 'AN', isPresent: boolean) => {
+    if (!canMarkToday) {
+      toast.error('Attendance can only be marked for today\'s events');
+      return;
+    }
+
     if (selectedUsers.length === 0) {
       toast.error('Please select users first');
       return;
@@ -151,16 +166,34 @@ export const AttendanceMarking = ({ event, selectedDate, users }: AttendanceMark
     }
   };
 
-  const renderSessionContent = (sessionType: 'FN' | 'AN') => {
-    if (!currentDay) {
-      return (
-        <div className="text-center py-8">
-          <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-500">No session data available for this date.</p>
-        </div>
-      );
-    }
+  // If no event day for today, show message
+  if (!currentDay || !isToday(currentDate)) {
+    return (
+      <Card className="shadow-sm border border-gray-200">
+        <CardHeader>
+          <CardTitle className="text-xl text-gray-900">Mark Attendance - {event.name}</CardTitle>
+          <CardDescription>
+            Attendance marking for {format(today, 'MMMM d, yyyy')}
+          </CardDescription>
+        </CardHeader>
+        
+        <CardContent>
+          <div className="text-center py-12">
+            <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No Event Today</h3>
+            <p className="text-gray-500">
+              There is no event scheduled for today ({format(today, 'MMMM d, yyyy')}) in this event.
+            </p>
+            <p className="text-gray-500 mt-2">
+              Attendance can only be marked for today's events.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
+  const renderSessionContent = (sessionType: 'FN' | 'AN') => {
     const canMark = sessionType === 'FN' ? fnCanMark : anCanMark;
     const session = sessionType === 'FN' ? currentDay.fnSession : currentDay.anSession;
     const status = sessionType === 'FN' ? fnStatus : anStatus;

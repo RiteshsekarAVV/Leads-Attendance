@@ -93,8 +93,8 @@ export const EventList = ({ events, onEventSelect }: EventListProps) => {
           <CardContent>
             <div className="space-y-4">
               {event.days.map((day, dayIndex) => {
-                const fnStatus = getSessionStatus(day.fnSession.startTime, day.fnSession.endTime);
-                const anStatus = getSessionStatus(day.anSession.startTime, day.anSession.endTime);
+                const fnStatus = getSessionStatus(day.fnSession.startTime, day.fnSession.endTime, day.date);
+                const anStatus = getSessionStatus(day.anSession.startTime, day.anSession.endTime, day.date);
                 const isToday = isSameDay(day.date, new Date());
 
                 return (
@@ -108,7 +108,7 @@ export const EventList = ({ events, onEventSelect }: EventListProps) => {
                           <Badge className="bg-blue-100 text-blue-800 text-xs">Today</Badge>
                         )}
                       </div>
-                      {onEventSelect && (
+                      {onEventSelect && isToday && (
                         <Button 
                           variant="outline" 
                           size="sm"

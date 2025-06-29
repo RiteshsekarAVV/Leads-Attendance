@@ -2,15 +2,18 @@ import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AttendanceMarking } from '@/components/attendance/AttendanceMarking';
-import { Calendar, CheckSquare, Users, Activity, Target } from 'lucide-react';
+import { Calendar, CheckSquare, Users, Activity, Target, AlertCircle } from 'lucide-react';
 import { useEventsData, useUsersData } from '@/hooks/useFirestore';
 import { format } from 'date-fns';
+import { getTodaysEventDays } from '@/utils/timeUtils';
 
 export const Attendance = () => {
   const [selectedEventId, setSelectedEventId] = useState<string>('');
   const { events, loading: eventsLoading } = useEventsData();
   const { users } = useUsersData();
 
+  // Get today's events only
+  const todaysEvents = getTodaysEventDays(events);
   const selectedEvent = events.find(event => event.id === selectedEventId);
 
   return (
@@ -24,7 +27,7 @@ export const Attendance = () => {
             </div>
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Mark Attendance</h1>
-              <p className="text-gray-600">Select an event to mark attendance for brigade leads and co-leads</p>
+              <p className="text-gray-600">Select an event to mark attendance for brigade leads and co-leads (Today Only)</p>
             </div>
           </div>
           
@@ -37,9 +40,9 @@ export const Attendance = () => {
                 </div>
                 <div>
                   <div className="text-2xl font-bold text-blue-900">
-                    {events.length}
+                    {todaysEvents.length}
                   </div>
-                  <p className="text-sm text-blue-700 font-medium">Total Events</p>
+                  <p className="text-sm text-blue-700 font-medium">Today's Events</p>
                 </div>
               </div>
             </div>
@@ -63,9 +66,9 @@ export const Attendance = () => {
                 </div>
                 <div>
                   <div className="text-2xl font-bold text-purple-900">
-                    {events.filter(e => e.days?.some(d => d.fnSession.isActive)).length}
+                    {todaysEvents.filter(e => e.day.fnSession.isActive).length}
                   </div>
-                  <p className="text-sm text-purple-700 font-medium">FN Active</p>
+                  <p className="text-sm text-purple-700 font-medium">FN Active Today</p>
                 </div>
               </div>
             </div>
@@ -76,9 +79,9 @@ export const Attendance = () => {
                 </div>
                 <div>
                   <div className="text-2xl font-bold text-pink-900">
-                    {events.filter(e => e.days?.some(d => d.anSession.isActive)).length}
+                    {todaysEvents.filter(e => e.day.anSession.isActive).length}
                   </div>
-                  <p className="text-sm text-pink-700 font-medium">AN Active</p>
+                  <p className="text-sm text-pink-700 font-medium">AN Active Today</p>
                 </div>
               </div>
             </div>
@@ -93,36 +96,49 @@ export const Attendance = () => {
                 <Calendar className="h-5 w-5 icon-blue" />
               </div>
               <div>
-                <CardTitle className="text-lg text-gray-900">Select Event</CardTitle>
+                <CardTitle className="text-lg text-gray-900">Select Today's Event</CardTitle>
                 <CardDescription>
-                  Choose an event to mark attendance for both FN and AN sessions
+                  Choose an event scheduled for today to mark attendance
                 </CardDescription>
               </div>
             </div>
           </CardHeader>
           <CardContent>
-            <Select value={selectedEventId} onValueChange={setSelectedEventId}>
-              <SelectTrigger className="h-12">
-                <SelectValue placeholder="Select an event to begin attendance marking" />
-              </SelectTrigger>
-              <SelectContent>
-                {events.map((event) => (
-                  <SelectItem key={event.id} value={event.id}>
-                    <div className="flex items-center space-x-3">
-                      <div className="p-1 bg-blue-light rounded-md">
-                        <Calendar className="h-3 w-3 icon-blue" />
-                      </div>
-                      <div>
-                        <div className="font-medium text-gray-900">{event.name}</div>
-                        <div className="text-xs text-gray-500">
-                          {format(event.startDate, 'MMM d')} - {format(event.endDate, 'MMM d, yyyy')}
+            {todaysEvents.length === 0 ? (
+              <div className="text-center py-8">
+                <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No Events Today</h3>
+                <p className="text-gray-500">
+                  There are no events scheduled for today ({format(new Date(), 'MMMM d, yyyy')}).
+                </p>
+                <p className="text-gray-500 mt-2">
+                  Attendance can only be marked for events happening today.
+                </p>
+              </div>
+            ) : (
+              <Select value={selectedEventId} onValueChange={setSelectedEventId}>
+                <SelectTrigger className="h-12">
+                  <SelectValue placeholder="Select today's event to begin attendance marking" />
+                </SelectTrigger>
+                <SelectContent>
+                  {todaysEvents.map((todayEvent) => (
+                    <SelectItem key={todayEvent.eventId} value={todayEvent.eventId}>
+                      <div className="flex items-center space-x-3">
+                        <div className="p-1 bg-blue-light rounded-md">
+                          <Calendar className="h-3 w-3 icon-blue" />
+                        </div>
+                        <div>
+                          <div className="font-medium text-gray-900">{todayEvent.eventName}</div>
+                          <div className="text-xs text-gray-500">
+                            Today - {format(new Date(), 'MMM d, yyyy')}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </CardContent>
         </Card>
 
@@ -134,19 +150,7 @@ export const Attendance = () => {
             <div className="animate-spin rounded-full h-12 w-12 border-4 border-orange-200 border-t-orange-600 mx-auto mb-4"></div>
             <p className="text-gray-600 text-lg font-medium">Loading events...</p>
           </div>
-        ) : (
-          events.length === 0 && (
-            <Card className="shadow-sm border border-gray-200">
-              <CardContent className="text-center py-12">
-                <div className="p-6 bg-orange-light rounded-full w-20 h-20 mx-auto mb-6 flex items-center justify-center">
-                  <Calendar className="h-10 w-10 icon-orange" />
-                </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-4">No Events Available</h3>
-                <p className="text-gray-600">Create an event first to start marking attendance for your brigade leads.</p>
-              </CardContent>
-            </Card>
-          )
-        )}
+        ) : null}
       </div>
     </div>
   );
