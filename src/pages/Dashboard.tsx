@@ -13,24 +13,34 @@ export const Dashboard = () => {
     const totalEvents = events.length;
     const totalUsers = users.length;
     
+    // Debug: Log the attendance data to see what's in the database
+    console.log('All attendance records:', attendance);
+    console.log('Present attendance records:', attendance.filter(record => record.isPresent));
+    
     // Calculate total attendance from actual attendance records marked as present
     const totalAttendance = attendance.filter(record => record.isPresent).length;
     
-    // Calculate average attendance percentage
-    // Total possible attendance = total users × total event sessions (FN + AN for each event day)
-    const totalPossibleAttendance = events.reduce((total, event) => {
-      const activeSessions = event.days.reduce((dayTotal, day) => {
-        let sessionCount = 0;
-        if (day.fnSession.isActive) sessionCount++;
-        if (day.anSession.isActive) sessionCount++;
-        return dayTotal + sessionCount;
-      }, 0);
-      return total + (activeSessions * totalUsers);
-    }, 0);
+    // Calculate total possible attendance slots
+    // This should be: total users × total active sessions across all event days
+    let totalPossibleAttendance = 0;
+    
+    events.forEach(event => {
+      event.days.forEach(day => {
+        let activeSessions = 0;
+        if (day.fnSession.isActive) activeSessions++;
+        if (day.anSession.isActive) activeSessions++;
+        totalPossibleAttendance += (activeSessions * totalUsers);
+      });
+    });
+    
+    console.log('Total possible attendance slots:', totalPossibleAttendance);
+    console.log('Total present attendance:', totalAttendance);
     
     const averageAttendance = totalPossibleAttendance > 0 
       ? Math.round((totalAttendance / totalPossibleAttendance) * 100) 
       : 0;
+
+    console.log('Calculated average attendance:', averageAttendance);
 
     return {
       totalEvents,
@@ -89,6 +99,15 @@ export const Dashboard = () => {
               <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
               <p className="text-gray-600">Comprehensive overview of brigade lead attendance and performance metrics</p>
             </div>
+          </div>
+          
+          {/* Debug Info - Remove this after checking */}
+          <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <p className="text-sm text-yellow-800">
+              <strong>Debug Info:</strong> Total attendance records in DB: {attendance.length} | 
+              Present records: {attendance.filter(r => r.isPresent).length} | 
+              Check browser console for more details
+            </p>
           </div>
           
           {/* Quick Metrics */}
