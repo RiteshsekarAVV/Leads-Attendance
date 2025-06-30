@@ -119,7 +119,7 @@ export const AttendanceRecords = () => {
     const statusName = selectedStatus === 'all' ? 'All Status' : 
       selectedStatus === 'present' ? 'Present' : 'Absent';
     const sessionName = selectedSession === 'all' ? 'All Sessions' : 
-      selectedSession === 'FN' ? 'Forenoon' : 'Afternoon';
+      selectedSession === 'FN' ? 'AN' : 'AN';
     const startDateStr = startDate || 'No Start Date';
     const endDateStr = endDate || 'No End Date';
     
@@ -261,7 +261,7 @@ export const AttendanceRecords = () => {
                       {selectedSession === 'FN' ? stats.FNRate : stats.ANRate}%
                     </div>
                     <p className="text-sm text-orange-700 font-medium">
-                      {selectedSession === 'FN' ? 'Forenoon' : 'Afternoon'} Attendance
+                      {selectedSession === 'FN' ? 'AN' : 'AN'} Attendance
                     </p>
                   </div>
                   <div className="text-right">
@@ -279,7 +279,7 @@ export const AttendanceRecords = () => {
                       {selectedSession === 'FN' ? stats.ANRate : stats.FNRate}%
                     </div>
                     <p className="text-sm text-cyan-700 font-medium">
-                      {selectedSession === 'FN' ? 'Afternoon' : 'Forenoon'} Comparison
+                      {selectedSession === 'FN' ? 'AN' : 'AN'} Comparison
                     </p>
                   </div>
                   <div className="text-right">
@@ -368,8 +368,8 @@ export const AttendanceRecords = () => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Sessions</SelectItem>
-                    <SelectItem value="FN">Forenoon</SelectItem>
-                    <SelectItem value="AN">Afternoon</SelectItem>
+                    <SelectItem value="FN">AN</SelectItem>
+                    <SelectItem value="AN">AN</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
