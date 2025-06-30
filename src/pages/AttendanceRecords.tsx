@@ -70,8 +70,8 @@ export const AttendanceRecords = () => {
       // Session filter
       if (selectedSession !== 'all') {
         const sessionType = record.sessionType?.toLowerCase();
-        if (selectedSession === 'forenoon' && sessionType !== 'forenoon') return false;
-        if (selectedSession === 'afternoon' && sessionType !== 'afternoon') return false;
+        if (selectedSession === 'FN' && sessionType !== 'FN') return false;
+        if (selectedSession === 'AN' && sessionType !== 'AN') return false;
       }
 
       // Date range filter
@@ -119,7 +119,7 @@ export const AttendanceRecords = () => {
     const statusName = selectedStatus === 'all' ? 'All Status' : 
       selectedStatus === 'present' ? 'Present' : 'Absent';
     const sessionName = selectedSession === 'all' ? 'All Sessions' : 
-      selectedSession === 'forenoon' ? 'Forenoon' : 'Afternoon';
+      selectedSession === 'FN' ? 'Forenoon' : 'Afternoon';
     const startDateStr = startDate || 'No Start Date';
     const endDateStr = endDate || 'No End Date';
     
@@ -147,26 +147,26 @@ export const AttendanceRecords = () => {
     const attendanceRate = totalRecords > 0 ? Math.round((presentRecords / totalRecords) * 100) : 0;
 
     // Session-specific stats
-    const forenoonRecords = filteredAttendance.filter(r => r.sessionType?.toLowerCase() === 'forenoon');
-    const afternoonRecords = filteredAttendance.filter(r => r.sessionType?.toLowerCase() === 'afternoon');
+    const FNRecords = filteredAttendance.filter(r => r.sessionType?.toLowerCase() === 'FN');
+    const ANRecords = filteredAttendance.filter(r => r.sessionType?.toLowerCase() === 'AN');
     
-    const forenoonPresent = forenoonRecords.filter(r => r.isPresent).length;
-    const afternoonPresent = afternoonRecords.filter(r => r.isPresent).length;
+    const FNPresent = FNRecords.filter(r => r.isPresent).length;
+    const ANPresent = ANRecords.filter(r => r.isPresent).length;
     
-    const forenoonRate = forenoonRecords.length > 0 ? Math.round((forenoonPresent / forenoonRecords.length) * 100) : 0;
-    const afternoonRate = afternoonRecords.length > 0 ? Math.round((afternoonPresent / afternoonRecords.length) * 100) : 0;
+    const FNRate = FNRecords.length > 0 ? Math.round((FNPresent / FNRecords.length) * 100) : 0;
+    const ANRate = ANRecords.length > 0 ? Math.round((ANPresent / ANRecords.length) * 100) : 0;
 
     return {
       totalRecords,
       presentRecords,
       absentRecords,
       attendanceRate,
-      forenoonRecords: forenoonRecords.length,
-      afternoonRecords: afternoonRecords.length,
-      forenoonPresent,
-      afternoonPresent,
-      forenoonRate,
-      afternoonRate
+      FNRecords: FNRecords.length,
+      ANRecords: ANRecords.length,
+      FNPresent,
+      ANPresent,
+      FNRate,
+      ANRate
     };
   }, [filteredAttendance]);
 
@@ -258,15 +258,15 @@ export const AttendanceRecords = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="text-lg font-bold text-orange-900">
-                      {selectedSession === 'forenoon' ? stats.forenoonRate : stats.afternoonRate}%
+                      {selectedSession === 'FN' ? stats.FNRate : stats.ANRate}%
                     </div>
                     <p className="text-sm text-orange-700 font-medium">
-                      {selectedSession === 'forenoon' ? 'Forenoon' : 'Afternoon'} Attendance
+                      {selectedSession === 'FN' ? 'Forenoon' : 'Afternoon'} Attendance
                     </p>
                   </div>
                   <div className="text-right">
                     <div className="text-sm text-orange-600">
-                      {selectedSession === 'forenoon' ? stats.forenoonPresent : stats.afternoonPresent} / {selectedSession === 'forenoon' ? stats.forenoonRecords : stats.afternoonRecords}
+                      {selectedSession === 'FN' ? stats.FNPresent : stats.ANPresent} / {selectedSession === 'FN' ? stats.FNRecords : stats.ANRecords}
                     </div>
                     <p className="text-xs text-orange-500">Present / Total</p>
                   </div>
@@ -276,15 +276,15 @@ export const AttendanceRecords = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="text-lg font-bold text-cyan-900">
-                      {selectedSession === 'forenoon' ? stats.afternoonRate : stats.forenoonRate}%
+                      {selectedSession === 'FN' ? stats.ANRate : stats.FNRate}%
                     </div>
                     <p className="text-sm text-cyan-700 font-medium">
-                      {selectedSession === 'forenoon' ? 'Afternoon' : 'Forenoon'} Comparison
+                      {selectedSession === 'FN' ? 'Afternoon' : 'Forenoon'} Comparison
                     </p>
                   </div>
                   <div className="text-right">
                     <div className="text-sm text-cyan-600">
-                      {selectedSession === 'forenoon' ? stats.afternoonPresent : stats.forenoonPresent} / {selectedSession === 'forenoon' ? stats.afternoonRecords : stats.forenoonRecords}
+                      {selectedSession === 'FN' ? stats.ANPresent : stats.FNPresent} / {selectedSession === 'FN' ? stats.ANRecords : stats.FNRecords}
                     </div>
                     <p className="text-xs text-cyan-500">Present / Total</p>
                   </div>
@@ -368,8 +368,8 @@ export const AttendanceRecords = () => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Sessions</SelectItem>
-                    <SelectItem value="forenoon">Forenoon</SelectItem>
-                    <SelectItem value="afternoon">Afternoon</SelectItem>
+                    <SelectItem value="FN">Forenoon</SelectItem>
+                    <SelectItem value="AN">Afternoon</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -461,7 +461,7 @@ export const AttendanceRecords = () => {
                             <Badge 
                               variant="outline" 
                               className={`text-xs ${
-                                record.sessionType?.toLowerCase() === 'forenoon' 
+                                record.sessionType?.toLowerCase() === 'FN' 
                                   ? 'bg-orange-50 text-orange-700 border-orange-200' 
                                   : 'bg-blue-50 text-blue-700 border-blue-200'
                               }`}
