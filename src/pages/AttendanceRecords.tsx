@@ -16,7 +16,6 @@ export const AttendanceRecords = () => {
   const [selectedEvent, setSelectedEvent] = useState('all');
   const [selectedBrigade, setSelectedBrigade] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('all');
-  const [selectedSession, setSelectedSession] = useState('all');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
 
@@ -67,13 +66,6 @@ export const AttendanceRecords = () => {
         if (selectedStatus === 'absent' && record.isPresent) return false;
       }
 
-      // Session filter
-      if (selectedSession !== 'all') {
-        const sessionType = record.sessionType?.toLowerCase();
-        if (selectedSession === 'FN' && sessionType !== 'FN') return false;
-        if (selectedSession === 'AN' && sessionType !== 'AN') return false;
-      }
-
       // Date range filter
       if (startDate && record.eventDate < new Date(startDate)) {
         return false;
@@ -84,7 +76,7 @@ export const AttendanceRecords = () => {
 
       return true;
     });
-  }, [attendance, users, events, searchTerm, selectedEvent, selectedBrigade, selectedStatus, selectedSession, startDate, endDate]);
+  }, [attendance, users, events, searchTerm, selectedEvent, selectedBrigade, selectedStatus, startDate, endDate]);
 
   // Prepare data for export
   const exportData = useMemo(() => {
@@ -118,12 +110,10 @@ export const AttendanceRecords = () => {
     const brigadeName = selectedBrigade === 'all' ? 'All Brigades' : selectedBrigade;
     const statusName = selectedStatus === 'all' ? 'All Status' : 
       selectedStatus === 'present' ? 'Present' : 'Absent';
-    const sessionName = selectedSession === 'all' ? 'All Sessions' : 
-      selectedSession === 'FN' ? 'AN' : 'AN';
     const startDateStr = startDate || 'No Start Date';
     const endDateStr = endDate || 'No End Date';
     
-    const filename = `${eventName}+${brigadeName}+${statusName}+${sessionName}+${startDateStr}+${endDateStr}`;
+    const filename = `${eventName}+${brigadeName}+${statusName}+${startDateStr}+${endDateStr}`;
     
     exportAttendanceData(exportData, filename);
     toast.success(`Exported ${exportData.length} attendance records`);
@@ -134,39 +124,22 @@ export const AttendanceRecords = () => {
     setSelectedEvent('all');
     setSelectedBrigade('all');
     setSelectedStatus('all');
-    setSelectedSession('all');
     setStartDate('');
     setEndDate('');
   };
 
-  // Calculate stats based on filtered data
+  // Calculate stats
   const stats = useMemo(() => {
     const totalRecords = filteredAttendance.length;
     const presentRecords = filteredAttendance.filter(r => r.isPresent).length;
     const absentRecords = totalRecords - presentRecords;
     const attendanceRate = totalRecords > 0 ? Math.round((presentRecords / totalRecords) * 100) : 0;
 
-    // Session-specific stats
-    const FNRecords = filteredAttendance.filter(r => r.sessionType?.toLowerCase() === 'FN');
-    const ANRecords = filteredAttendance.filter(r => r.sessionType?.toLowerCase() === 'AN');
-    
-    const FNPresent = FNRecords.filter(r => r.isPresent).length;
-    const ANPresent = ANRecords.filter(r => r.isPresent).length;
-    
-    const FNRate = FNRecords.length > 0 ? Math.round((FNPresent / FNRecords.length) * 100) : 0;
-    const ANRate = ANRecords.length > 0 ? Math.round((ANPresent / ANRecords.length) * 100) : 0;
-
     return {
       totalRecords,
       presentRecords,
       absentRecords,
-      attendanceRate,
-      FNRecords: FNRecords.length,
-      ANRecords: ANRecords.length,
-      FNPresent,
-      ANPresent,
-      FNRate,
-      ANRate
+      attendanceRate
     };
   }, [filteredAttendance]);
 
@@ -250,48 +223,6 @@ export const AttendanceRecords = () => {
               </div>
             </div>
           </div>
-
-          {/* Session-specific stats - only show when session filter is applied */}
-          {selectedSession !== 'all' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-              <div className="bg-orange-50 p-4 rounded-lg border border-orange-100">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="text-lg font-bold text-orange-900">
-                      {selectedSession === 'FN' ? stats.FNRate : stats.ANRate}%
-                    </div>
-                    <p className="text-sm text-orange-700 font-medium">
-                      {selectedSession === 'FN' ? 'AN' : 'AN'} Attendance
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-sm text-orange-600">
-                      {selectedSession === 'FN' ? stats.FNPresent : stats.ANPresent} / {selectedSession === 'FN' ? stats.FNRecords : stats.ANRecords}
-                    </div>
-                    <p className="text-xs text-orange-500">Present / Total</p>
-                  </div>
-                </div>
-              </div>
-              <div className="bg-cyan-50 p-4 rounded-lg border border-cyan-100">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="text-lg font-bold text-cyan-900">
-                      {selectedSession === 'FN' ? stats.ANRate : stats.FNRate}%
-                    </div>
-                    <p className="text-sm text-cyan-700 font-medium">
-                      {selectedSession === 'FN' ? 'AN' : 'AN'} Comparison
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-sm text-cyan-600">
-                      {selectedSession === 'FN' ? stats.ANPresent : stats.FNPresent} / {selectedSession === 'FN' ? stats.ANRecords : stats.FNRecords}
-                    </div>
-                    <p className="text-xs text-cyan-500">Present / Total</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Filters */}
@@ -308,7 +239,7 @@ export const AttendanceRecords = () => {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
               {/* Search */}
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-700">Search</label>
@@ -355,21 +286,6 @@ export const AttendanceRecords = () => {
                         {brigade}
                       </SelectItem>
                     ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Session Filter */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Session</label>
-                <Select value={selectedSession} onValueChange={setSelectedSession}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="All Sessions" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Sessions</SelectItem>
-                    <SelectItem value="FN">AN</SelectItem>
-                    <SelectItem value="AN">AN</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -439,6 +355,7 @@ export const AttendanceRecords = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead>Event</TableHead>
                       <TableHead>Date</TableHead>
                       <TableHead>Session</TableHead>
                       <TableHead>Name</TableHead>
@@ -451,21 +368,18 @@ export const AttendanceRecords = () => {
                   <TableBody>
                     {filteredAttendance.map((record) => {
                       const user = users.find(u => u.id === record.userId);
+                      const event = events.find(e => e.id === record.eventId);
                       
                       return (
                         <TableRow key={record.id}>
+                          <TableCell className="font-medium">
+                            {event?.name || 'Unknown Event'}
+                          </TableCell>
                           <TableCell>
                             {format(record.eventDate, 'MMM d, yyyy')}
                           </TableCell>
                           <TableCell>
-                            <Badge 
-                              variant="outline" 
-                              className={`text-xs ${
-                                record.sessionType?.toLowerCase() === 'FN' 
-                                  ? 'bg-orange-50 text-orange-700 border-orange-200' 
-                                  : 'bg-blue-50 text-blue-700 border-blue-200'
-                              }`}
-                            >
+                            <Badge variant="outline" className="text-xs">
                               {record.sessionType}
                             </Badge>
                           </TableCell>
