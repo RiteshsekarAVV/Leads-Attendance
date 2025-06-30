@@ -12,9 +12,24 @@ export const Dashboard = () => {
   const stats = useMemo(() => {
     const totalEvents = events.length;
     const totalUsers = users.length;
+    
+    // Calculate total attendance from actual attendance records marked as present
     const totalAttendance = attendance.filter(record => record.isPresent).length;
-    const averageAttendance = totalUsers > 0 && totalEvents > 0 
-      ? Math.round((totalAttendance / (totalUsers * totalEvents * 2)) * 100) 
+    
+    // Calculate average attendance percentage
+    // Total possible attendance = total users × total event sessions (FN + AN for each event day)
+    const totalPossibleAttendance = events.reduce((total, event) => {
+      const activeSessions = event.days.reduce((dayTotal, day) => {
+        let sessionCount = 0;
+        if (day.fnSession.isActive) sessionCount++;
+        if (day.anSession.isActive) sessionCount++;
+        return dayTotal + sessionCount;
+      }, 0);
+      return total + (activeSessions * totalUsers);
+    }, 0);
+    
+    const averageAttendance = totalPossibleAttendance > 0 
+      ? Math.round((totalAttendance / totalPossibleAttendance) * 100) 
       : 0;
 
     return {
