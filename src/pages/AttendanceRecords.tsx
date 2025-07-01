@@ -16,8 +16,7 @@ export const AttendanceRecords = () => {
   const [selectedEvent, setSelectedEvent] = useState('all');
   const [selectedBrigade, setSelectedBrigade] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('all');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
+  const [selectedSession, setSelectedSession] = useState('all');
 
   const { events } = useEventsData();
   const { users } = useUsersData();
@@ -41,10 +40,10 @@ export const AttendanceRecords = () => {
       if (searchTerm) {
         const searchLower = searchTerm.toLowerCase();
         if (
-          !user.fullName.toLowerCase().includes(searchLower) &&
-          !user.rollNumber.toLowerCase().includes(searchLower) &&
-          !user.brigadeName.toLowerCase().includes(searchLower) &&
-          !event.name.toLowerCase().includes(searchLower)
+          !(user.fullName || '').toLowerCase().includes(searchLower) &&
+          !(user.rollNumber || '').toLowerCase().includes(searchLower) &&
+          !(user.brigadeName || '').toLowerCase().includes(searchLower) &&
+          !(event.name || '').toLowerCase().includes(searchLower)
         ) {
           return false;
         }
@@ -66,17 +65,14 @@ export const AttendanceRecords = () => {
         if (selectedStatus === 'absent' && record.isPresent) return false;
       }
 
-      // Date range filter
-      if (startDate && record.eventDate < new Date(startDate)) {
-        return false;
-      }
-      if (endDate && record.eventDate > new Date(endDate)) {
+      // Session filter
+      if (selectedSession !== 'all' && record.sessionType !== selectedSession) {
         return false;
       }
 
       return true;
     });
-  }, [attendance, users, events, searchTerm, selectedEvent, selectedBrigade, selectedStatus, startDate, endDate]);
+  }, [attendance, users, events, searchTerm, selectedEvent, selectedBrigade, selectedStatus, selectedSession]);
 
   // Prepare data for export
   const exportData = useMemo(() => {
@@ -110,10 +106,9 @@ export const AttendanceRecords = () => {
     const brigadeName = selectedBrigade === 'all' ? 'All Brigades' : selectedBrigade;
     const statusName = selectedStatus === 'all' ? 'All Status' : 
       selectedStatus === 'present' ? 'Present' : 'Absent';
-    const startDateStr = startDate || 'No Start Date';
-    const endDateStr = endDate || 'No End Date';
+    const sessionName = selectedSession === 'all' ? 'All Sessions' : selectedSession;
     
-    const filename = `${eventName}+${brigadeName}+${statusName}+${startDateStr}+${endDateStr}`;
+    const filename = `${eventName}_${brigadeName}_${statusName}_${sessionName}`;
     
     exportAttendanceData(exportData, filename);
     toast.success(`Exported ${exportData.length} attendance records`);
@@ -124,8 +119,7 @@ export const AttendanceRecords = () => {
     setSelectedEvent('all');
     setSelectedBrigade('all');
     setSelectedStatus('all');
-    setStartDate('');
-    setEndDate('');
+    setSelectedSession('all');
   };
 
   // Calculate stats
@@ -239,7 +233,7 @@ export const AttendanceRecords = () => {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
               {/* Search */}
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-700">Search</label>
@@ -290,6 +284,21 @@ export const AttendanceRecords = () => {
                 </Select>
               </div>
 
+              {/* Session Filter */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">Session</label>
+                <Select value={selectedSession} onValueChange={setSelectedSession}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="All Sessions" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Sessions</SelectItem>
+                    <SelectItem value="FN">Forenoon (FN)</SelectItem>
+                    <SelectItem value="AN">Afternoon (AN)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
               {/* Status Filter */}
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-700">Status</label>
@@ -303,26 +312,6 @@ export const AttendanceRecords = () => {
                     <SelectItem value="absent">Absent</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
-            </div>
-
-            {/* Date Range */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Start Date</label>
-                <Input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">End Date</label>
-                <Input
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                />
               </div>
             </div>
           </CardContent>
