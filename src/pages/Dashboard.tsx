@@ -80,7 +80,7 @@ export const Dashboard = () => {
     });
 
     return Array.from(brigadeMap.entries()).map(([name, attendance], index) => ({
-      name: name.replace(' Brigade', ''),
+      name: (name || '').replace(' Brigade', ''),
       attendance,
       color: colors[index % colors.length]
     }));
