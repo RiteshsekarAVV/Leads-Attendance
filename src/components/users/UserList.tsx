@@ -20,10 +20,10 @@ export const UserList = ({ users }: UserListProps) => {
   const { deleteUser, loading } = useFirestore();
 
   const filteredUsers = users.filter(user =>
-    user.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.rollNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.brigadeName.toLowerCase().includes(searchTerm.toLowerCase())
+    (user.fullName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (user.rollNumber || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (user.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (user.brigadeName || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleDeleteUser = async (userId: string) => {
