@@ -107,7 +107,7 @@ const formatDateTimeForExcel = (date: Date): string => {
   });
 };
 
-export const exportAttendanceData = (data: any[], filename: string, eventName?: string) => {
+export const exportAttendanceData = (data: any[], filename: string) => {
   // Prepare data with updated format
   const formattedData = data.map(record => ({
     'Date': formatDateForExcel(new Date(record['Date'])),
@@ -134,7 +134,7 @@ export const exportAttendanceData = (data: any[], filename: string, eventName?: 
   });
   
   // Sort data within each department by Roll Number
-  departmentGroups.forEach((records, deptCode) => {
+  departmentGroups.forEach((records) => {
     records.sort((a, b) => {
       const rollA = a['Roll Number'] || '';
       const rollB = b['Roll Number'] || '';
@@ -250,7 +250,7 @@ export const exportUserListByDepartment = (users: any[], filename: string) => {
   });
   
   // Sort data within each department by Roll Number
-  departmentGroups.forEach((records, deptCode) => {
+  departmentGroups.forEach((records) => {
     records.sort((a, b) => {
       const rollA = a['Roll Number'] || '';
       const rollB = b['Roll Number'] || '';
