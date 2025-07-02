@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Header } from '@/components/layout/Header';
 import { TopNavigation } from '@/components/layout/TopNavigation';
-import { Dashboard } from '@/pages/Dashboard';
 import { Events } from '@/pages/Events';
 import { Users } from '@/pages/Users';
 import { Attendance } from '@/pages/Attendance';
@@ -9,12 +8,10 @@ import { AttendanceRecords } from '@/pages/AttendanceRecords';
 import { Toaster } from '@/components/ui/sonner';
 
 function App() {
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [activeTab, setActiveTab] = useState('attendance');
 
   const renderPage = () => {
     switch (activeTab) {
-      case 'dashboard':
-        return <Dashboard />;
       case 'events':
         return <Events />;
       case 'users':
@@ -24,7 +21,7 @@ function App() {
       case 'attendance-records':
         return <AttendanceRecords />;
       default:
-        return <Dashboard />;
+        return <Attendance />;
     }
   };
 
