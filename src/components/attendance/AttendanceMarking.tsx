@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Clock, AlertCircle, Users, Check, X, UserCheck } from 'lucide-react';
+import { Clock, AlertCircle, Users, Check, X, UserCheck, Loader2 } from 'lucide-react';
 import { Event, User } from '@/types';
 import { isWithinTimeRange, formatTimeRange, getSessionStatus, isToday } from '@/utils/timeUtils';
 import { useFirestore } from '@/hooks/useFirestore';
@@ -22,6 +22,7 @@ interface AttendanceMarkingProps {
 export const AttendanceMarking = ({ event, selectedDate, users }: AttendanceMarkingProps) => {
   const [activeTab, setActiveTab] = useState('fn');
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
+  const [markingUserId, setMarkingUserId] = useState<string | null>(null);
   
   // Only allow marking attendance for today's date
   const today = new Date();
@@ -76,6 +77,8 @@ export const AttendanceMarking = ({ event, selectedDate, users }: AttendanceMark
       return;
     }
 
+    setMarkingUserId(user.id);
+
     const existingRecord = getAttendanceRecord(user.id, sessionType);
     
     if (existingRecord) {
@@ -103,6 +106,8 @@ export const AttendanceMarking = ({ event, selectedDate, users }: AttendanceMark
         toast.error('Failed to mark attendance');
       }
     }
+
+    setMarkingUserId(null);
   };
 
   const handleBulkAttendance = async (sessionType: 'FN' | 'AN', isPresent: boolean) => {
@@ -292,6 +297,7 @@ export const AttendanceMarking = ({ event, selectedDate, users }: AttendanceMark
             const attendanceRecord = getAttendanceRecord(user.id, sessionType);
             const isPresent = attendanceRecord?.isPresent;
             const hasRecord = attendanceRecord !== undefined;
+            const isMarking = markingUserId === user.id;
             
             return (
               <div 
@@ -317,15 +323,19 @@ export const AttendanceMarking = ({ event, selectedDate, users }: AttendanceMark
                     size="sm"
                     variant={isPresent === true ? "default" : "outline"}
                     onClick={() => handleAttendanceToggle(user, sessionType, true)}
-                    disabled={!canMark || !session.isActive || loading || hasRecord}
+                    disabled={!canMark || !session.isActive || loading || hasRecord || isMarking}
                     className={`${
                       isPresent === true 
                         ? 'bg-green-600 hover:bg-green-700 text-white border-green-600' 
                         : 'border-green-200 text-green-700 hover:bg-green-50'
                     } ${hasRecord ? 'opacity-50 cursor-not-allowed' : ''}`}
                   >
-                    <Check className="h-4 w-4 mr-1" />
-                    Present
+                    {isMarking ? (
+                      <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                    ) : (
+                      <Check className="h-4 w-4 mr-1" />
+                    )}
+                    {isMarking ? 'Marking...' : 'Present'}
                   </Button>
                   
                   {/* Absent Button */}
@@ -333,15 +343,19 @@ export const AttendanceMarking = ({ event, selectedDate, users }: AttendanceMark
                     size="sm"
                     variant={isPresent === false ? "default" : "outline"}
                     onClick={() => handleAttendanceToggle(user, sessionType, false)}
-                    disabled={!canMark || !session.isActive || loading || hasRecord}
+                    disabled={!canMark || !session.isActive || loading || hasRecord || isMarking}
                     className={`${
                       isPresent === false 
                         ? 'bg-red-600 hover:bg-red-700 text-white border-red-600' 
                         : 'border-red-200 text-red-700 hover:bg-red-50'
                     } ${hasRecord ? 'opacity-50 cursor-not-allowed' : ''}`}
                   >
-                    <X className="h-4 w-4 mr-1" />
-                    Absent
+                    {isMarking ? (
+                      <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                    ) : (
+                      <X className="h-4 w-4 mr-1" />
+                    )}
+                    {isMarking ? 'Marking...' : 'Absent'}
                   </Button>
                   
                   {/* Status Indicator */}

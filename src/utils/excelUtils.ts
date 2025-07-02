@@ -133,14 +133,28 @@ export const exportAttendanceData = (data: any[], filename: string, eventName?: 
     departmentGroups.get(deptCode)!.push(record);
   });
   
+  // Sort data within each department by Roll Number
+  departmentGroups.forEach((records, deptCode) => {
+    records.sort((a, b) => {
+      const rollA = a['Roll Number'] || '';
+      const rollB = b['Roll Number'] || '';
+      return rollA.localeCompare(rollB);
+    });
+  });
+  
   // Create workbook
   const wb = XLSX.utils.book_new();
   
-  // Add Overall Data sheet first
-  const overallWs = XLSX.utils.json_to_sheet(formattedData);
+  // Add Overall Data sheet first (sorted by Roll Number)
+  const sortedOverallData = [...formattedData].sort((a, b) => {
+    const rollA = a['Roll Number'] || '';
+    const rollB = b['Roll Number'] || '';
+    return rollA.localeCompare(rollB);
+  });
+  const overallWs = XLSX.utils.json_to_sheet(sortedOverallData);
   XLSX.utils.book_append_sheet(wb, overallWs, 'Overall Data');
   
-  // Create stats data
+  // Create stats data (without attendance percentage)
   const statsData = createStatsData(formattedData);
   const statsWs = XLSX.utils.json_to_sheet(statsData);
   XLSX.utils.book_append_sheet(wb, statsWs, 'Stats');
@@ -161,7 +175,7 @@ export const exportAttendanceData = (data: any[], filename: string, eventName?: 
   XLSX.writeFile(wb, `${filename}.xlsx`);
 };
 
-// Function to create stats data
+// Function to create stats data (without attendance percentage)
 const createStatsData = (data: any[]) => {
   const brigadeStats = new Map<string, {
     total: number;
@@ -198,15 +212,13 @@ const createStatsData = (data: any[]) => {
     }
   });
 
-  // Convert to array format for Excel
+  // Convert to array format for Excel (without attendance percentage)
   const statsArray = Array.from(brigadeStats.entries()).map(([brigade, stats]) => ({
     'Brigade': brigade,
     'Total Count': stats.total,
     'Present': stats.present,
     'Absent': stats.absent,
-    'Not Marked': stats.notMarked,
-    'Attendance Rate': stats.total > 0 ? 
-      `${Math.round((stats.present / (stats.present + stats.absent)) * 100)}%` : '0%'
+    'Not Marked': stats.notMarked
   }));
 
   return statsArray;
@@ -234,6 +246,15 @@ export const exportUserListByDepartment = (users: any[], filename: string) => {
           user.createdAt.toISOString().split('T')[0] : 
           user.createdAt) : 
         (user['Created At'] || 'N/A')
+    });
+  });
+  
+  // Sort data within each department by Roll Number
+  departmentGroups.forEach((records, deptCode) => {
+    records.sort((a, b) => {
+      const rollA = a['Roll Number'] || '';
+      const rollB = b['Roll Number'] || '';
+      return rollA.localeCompare(rollB);
     });
   });
   
@@ -265,7 +286,11 @@ export const exportUserListByDepartment = (users: any[], filename: string) => {
           user.createdAt.toISOString().split('T')[0] : 
           user.createdAt) : 
         'N/A'
-    }));
+    })).sort((a, b) => {
+      const rollA = a['Roll Number'] || '';
+      const rollB = b['Roll Number'] || '';
+      return rollA.localeCompare(rollB);
+    });
     const ws = XLSX.utils.json_to_sheet(userData);
     XLSX.utils.book_append_sheet(wb, ws, 'All Users');
   }
