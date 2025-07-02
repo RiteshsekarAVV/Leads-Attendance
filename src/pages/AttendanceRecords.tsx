@@ -131,7 +131,7 @@ export const AttendanceRecords = () => {
     return records;
   }, [ongoingEvents, users, attendance, selectedEventDate, selectedBrigade, selectedSession]);
 
-  // Prepare data for export
+  // Prepare data for export with department-wise sheets
   const exportData = useMemo(() => {
     return allRecords.map(record => ({
       'Event Name': record.eventName,
@@ -162,7 +162,7 @@ export const AttendanceRecords = () => {
     const filename = `Attendance_${dateName}_${brigadeName}_${sessionName}`;
     
     exportAttendanceData(exportData, filename);
-    toast.success(`Exported ${exportData.length} attendance records`);
+    toast.success(`Exported ${exportData.length} attendance records with department-wise sheets`);
   };
 
   const clearFilters = () => {
@@ -263,12 +263,12 @@ export const AttendanceRecords = () => {
                 </h1>
               </div>
               <p className="text-gray-600 max-w-2xl">
-                View, filter, and export attendance records for ongoing events (including unmarked users)
+                View, filter, and export attendance records for ongoing events (Export creates department-wise sheets)
               </p>
             </div>
             <Button onClick={handleExport} className="bg-indigo-600 hover:bg-indigo-700 text-white">
               <Download className="h-4 w-4 mr-2" />
-              Export ({allRecords.length})
+              Export by Dept ({allRecords.length})
             </Button>
           </div>
           
