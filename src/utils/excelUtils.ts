@@ -69,6 +69,11 @@ const getDepartmentCode = (rollNumber: string): string => {
   if (!rollNumber || rollNumber.length < 5) {
     return 'UNKNOWN';
   }
+
+  // Special case: BCW or TCW should go to CW sheet
+  if (deptCode === 'BCW' || deptCode === 'TCW') {
+    return 'CW';
+  }
   
   // Check if third character is 'B' (indicating it's a valid format like 25BBA001)
   if (rollNumber.charAt(2) !== 'B') {
@@ -77,11 +82,6 @@ const getDepartmentCode = (rollNumber: string): string => {
   
   // Extract the department code (characters 2-4, e.g., "BBA" from "25BBA001")
   const deptCode = rollNumber.substring(2, 5);
-  
-  // Special case: BCW or TCW should go to CW sheet
-  if (deptCode === 'BCW' || deptCode === 'TCW') {
-    return 'CW';
-  }
   
   return deptCode;
 };
