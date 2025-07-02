@@ -1,26 +1,45 @@
 import { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Download, Search, Filter, FileText, Users, Activity } from 'lucide-react';
+import { Download, Filter, FileText, Users, Activity, Calendar } from 'lucide-react';
 import { useEventsData, useUsersData, useAttendanceData } from '@/hooks/useFirestore';
 import { exportAttendanceData } from '@/utils/excelUtils';
-import { format } from 'date-fns';
+import { format, isSameDay } from 'date-fns';
 import { toast } from 'sonner';
 
 export const AttendanceRecords = () => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedEvent, setSelectedEvent] = useState('all');
+  const [selectedEventDate, setSelectedEventDate] = useState('all');
   const [selectedBrigade, setSelectedBrigade] = useState('all');
-  const [selectedStatus, setSelectedStatus] = useState('all');
-  const [selectedSession, setSelectedSession] = useState('all');
+  const [selectedSession, setSelectedSession] = useState('FN');
 
   const { events } = useEventsData();
   const { users } = useUsersData();
   const { attendance } = useAttendanceData();
+
+  // Get ongoing events (events that have at least one day that is today or in the future)
+  const ongoingEvents = useMemo(() => {
+    const today = new Date();
+    return events.filter(event => 
+      event.days.some(day => {
+        const eventDay = new Date(day.date);
+        return eventDay >= new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      })
+    );
+  }, [events]);
+
+  // Get unique event dates from ongoing events
+  const eventDates = useMemo(() => {
+    const dates = new Set<string>();
+    ongoingEvents.forEach(event => {
+      event.days.forEach(day => {
+        dates.add(format(day.date, 'yyyy-MM-dd'));
+      });
+    });
+    return Array.from(dates).sort();
+  }, [ongoingEvents]);
 
   // Get unique brigades
   const brigades = useMemo(() => {
@@ -36,22 +55,13 @@ export const AttendanceRecords = () => {
       
       if (!user || !event) return false;
 
-      // Search filter
-      if (searchTerm) {
-        const searchLower = searchTerm.toLowerCase();
-        if (
-          !(user.fullName || '').toLowerCase().includes(searchLower) &&
-          !(user.rollNumber || '').toLowerCase().includes(searchLower) &&
-          !(user.brigadeName || '').toLowerCase().includes(searchLower) &&
-          !(event.name || '').toLowerCase().includes(searchLower)
-        ) {
-          return false;
-        }
-      }
+      // Check if event is ongoing
+      if (!ongoingEvents.find(e => e.id === event.id)) return false;
 
-      // Event filter
-      if (selectedEvent !== 'all' && record.eventId !== selectedEvent) {
-        return false;
+      // Event date filter
+      if (selectedEventDate !== 'all') {
+        const recordDate = format(record.eventDate, 'yyyy-MM-dd');
+        if (recordDate !== selectedEventDate) return false;
       }
 
       // Brigade filter
@@ -59,20 +69,14 @@ export const AttendanceRecords = () => {
         return false;
       }
 
-      // Status filter
-      if (selectedStatus !== 'all') {
-        if (selectedStatus === 'present' && !record.isPresent) return false;
-        if (selectedStatus === 'absent' && record.isPresent) return false;
-      }
-
       // Session filter
-      if (selectedSession !== 'all' && record.sessionType !== selectedSession) {
+      if (record.sessionType !== selectedSession) {
         return false;
       }
 
       return true;
     });
-  }, [attendance, users, events, searchTerm, selectedEvent, selectedBrigade, selectedStatus, selectedSession]);
+  }, [attendance, users, events, ongoingEvents, selectedEventDate, selectedBrigade, selectedSession]);
 
   // Prepare data for export
   const exportData = useMemo(() => {
@@ -101,28 +105,23 @@ export const AttendanceRecords = () => {
     }
     
     // Generate filename based on filters
-    const eventName = selectedEvent === 'all' ? 'All Events' : 
-      events.find(e => e.id === selectedEvent)?.name || 'Unknown Event';
+    const dateName = selectedEventDate === 'all' ? 'All Dates' : selectedEventDate;
     const brigadeName = selectedBrigade === 'all' ? 'All Brigades' : selectedBrigade;
-    const statusName = selectedStatus === 'all' ? 'All Status' : 
-      selectedStatus === 'present' ? 'Present' : 'Absent';
-    const sessionName = selectedSession === 'all' ? 'All Sessions' : selectedSession;
+    const sessionName = selectedSession;
     
-    const filename = `${eventName}_${brigadeName}_${statusName}_${sessionName}`;
+    const filename = `Attendance_${dateName}_${brigadeName}_${sessionName}`;
     
     exportAttendanceData(exportData, filename);
     toast.success(`Exported ${exportData.length} attendance records`);
   };
 
   const clearFilters = () => {
-    setSearchTerm('');
-    setSelectedEvent('all');
+    setSelectedEventDate('all');
     setSelectedBrigade('all');
-    setSelectedStatus('all');
-    setSelectedSession('all');
+    setSelectedSession('FN');
   };
 
-  // Calculate stats
+  // Calculate stats for filtered data
   const stats = useMemo(() => {
     const totalRecords = filteredAttendance.length;
     const presentRecords = filteredAttendance.filter(r => r.isPresent).length;
@@ -153,7 +152,7 @@ export const AttendanceRecords = () => {
                 </h1>
               </div>
               <p className="text-gray-600 max-w-2xl">
-                View, filter, and export all attendance records with comprehensive filtering options
+                View, filter, and export attendance records for ongoing events
               </p>
             </div>
             <Button onClick={handleExport} className="bg-indigo-600 hover:bg-indigo-700 text-white">
@@ -162,7 +161,7 @@ export const AttendanceRecords = () => {
             </Button>
           </div>
           
-          {/* Stats */}
+          {/* Stats for filtered data */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
             <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
               <div className="flex items-center space-x-3">
@@ -233,33 +232,22 @@ export const AttendanceRecords = () => {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-              {/* Search */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Event Date Filter */}
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Search</label>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <Input
-                    placeholder="Name, roll number, brigade..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-              </div>
-
-              {/* Event Filter */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Event</label>
-                <Select value={selectedEvent} onValueChange={setSelectedEvent}>
+                <label className="text-sm font-medium text-gray-700 flex items-center space-x-2">
+                  <Calendar className="h-4 w-4" />
+                  <span>Event Date</span>
+                </label>
+                <Select value={selectedEventDate} onValueChange={setSelectedEventDate}>
                   <SelectTrigger>
-                    <SelectValue placeholder="All Events" />
+                    <SelectValue placeholder="All Dates" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Events</SelectItem>
-                    {events.map((event) => (
-                      <SelectItem key={event.id} value={event.id}>
-                        {event.name}
+                    <SelectItem value="all">All Dates</SelectItem>
+                    {eventDates.map((date) => (
+                      <SelectItem key={date} value={date}>
+                        {format(new Date(date), 'MMM d, yyyy')}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -289,27 +277,11 @@ export const AttendanceRecords = () => {
                 <label className="text-sm font-medium text-gray-700">Session</label>
                 <Select value={selectedSession} onValueChange={setSelectedSession}>
                   <SelectTrigger>
-                    <SelectValue placeholder="All Sessions" />
+                    <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Sessions</SelectItem>
                     <SelectItem value="FN">Forenoon (FN)</SelectItem>
                     <SelectItem value="AN">Afternoon (AN)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Status Filter */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Status</label>
-                <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="All Statuses" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Statuses</SelectItem>
-                    <SelectItem value="present">Present</SelectItem>
-                    <SelectItem value="absent">Absent</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -324,7 +296,7 @@ export const AttendanceRecords = () => {
               Attendance Records ({filteredAttendance.length})
             </CardTitle>
             <CardDescription>
-              Showing {filteredAttendance.length} of {attendance.length} total records
+              Showing filtered records from ongoing events
             </CardDescription>
           </CardHeader>
           <CardContent>

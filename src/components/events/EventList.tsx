@@ -8,6 +8,7 @@ import { format, isSameDay } from 'date-fns';
 import { formatTimeRange, getSessionStatus } from '@/utils/timeUtils';
 import { useFirestore } from '@/hooks/useFirestore';
 import { toast } from 'sonner';
+import { EditEventModal } from './EditEventModal';
 
 interface EventListProps {
   events: Event[];
@@ -77,6 +78,7 @@ export const EventList = ({ events, onEventSelect }: EventListProps) => {
                 </CardDescription>
               </div>
               <div className="flex space-x-2">
+                <EditEventModal event={event} />
                 <Button 
                   variant="outline" 
                   size="sm"
