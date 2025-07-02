@@ -175,6 +175,37 @@ export const useFirestore = () => {
     }
   };
 
+  const deleteAttendance = async (attendanceId: string) => {
+    setLoading(true);
+    try {
+      await deleteDoc(doc(db, 'attendance', attendanceId));
+      setLoading(false);
+      return { success: true };
+    } catch (error: any) {
+      setLoading(false);
+      return { success: false, error: error.message };
+    }
+  };
+
+  const deleteDuplicateAttendance = async (duplicateIds: string[]) => {
+    setLoading(true);
+    try {
+      const batch = writeBatch(db);
+      
+      duplicateIds.forEach((id) => {
+        const docRef = doc(db, 'attendance', id);
+        batch.delete(docRef);
+      });
+
+      await batch.commit();
+      setLoading(false);
+      return { success: true };
+    } catch (error: any) {
+      setLoading(false);
+      return { success: false, error: error.message };
+    }
+  };
+
   return {
     loading,
     addEvent,
@@ -187,7 +218,9 @@ export const useFirestore = () => {
     addBrigade,
     deleteBrigade,
     markAttendance,
-    updateAttendance
+    updateAttendance,
+    deleteAttendance,
+    deleteDuplicateAttendance
   };
 };
 

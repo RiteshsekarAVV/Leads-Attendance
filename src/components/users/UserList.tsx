@@ -9,7 +9,7 @@ import { User } from '@/types';
 import { format } from 'date-fns';
 import { useFirestore } from '@/hooks/useFirestore';
 import { toast } from 'sonner';
-import { exportAttendanceData } from '@/utils/excelUtils';
+import { exportUserListByDepartment } from '@/utils/excelUtils';
 
 interface UserListProps {
   users: User[];
@@ -38,16 +38,8 @@ export const UserList = ({ users }: UserListProps) => {
   };
 
   const handleExportUsers = () => {
-    const exportData = users.map(user => ({
-      'Full Name': user.fullName,
-      'Roll Number': user.rollNumber,
-      'Email': user.email,
-      'Brigade Name': user.brigadeName,
-      'Created At': format(user.createdAt, 'yyyy-MM-dd HH:mm:ss')
-    }));
-    
-    exportAttendanceData(exportData, 'brigade_leads_list');
-    toast.success('User list exported successfully');
+    exportUserListByDepartment(users, 'brigade_leads_by_department');
+    toast.success('User list exported successfully with department-wise sheets');
   };
 
   const brigadeColors: { [key: string]: string } = {
@@ -60,6 +52,25 @@ export const UserList = ({ users }: UserListProps) => {
 
   const getBrigadeColor = (brigadeName: string) => {
     return brigadeColors[brigadeName] || 'bg-gray-100 text-gray-800';
+  };
+
+  // Helper function to get department code from roll number for display
+  const getDepartmentCode = (rollNumber: string): string => {
+    if (!rollNumber || rollNumber.length < 5) {
+      return 'UNKNOWN';
+    }
+    
+    if (rollNumber.charAt(2) !== 'B') {
+      return 'UNKNOWN';
+    }
+    
+    const deptCode = rollNumber.substring(2, 5);
+    
+    if (deptCode === 'BCW' || deptCode === 'TCW') {
+      return 'CW';
+    }
+    
+    return deptCode;
   };
 
   if (users.length === 0) {
@@ -84,12 +95,12 @@ export const UserList = ({ users }: UserListProps) => {
               <span>Brigade Leads & Co-Leads ({users.length})</span>
             </CardTitle>
             <CardDescription>
-              Manage registered brigade leads and co-leads
+              Manage registered brigade leads and co-leads (Export creates department-wise sheets)
             </CardDescription>
           </div>
           <Button onClick={handleExportUsers} variant="outline">
             <Download className="h-4 w-4 mr-2" />
-            Export List
+            Export by Department
           </Button>
         </div>
       </CardHeader>
@@ -112,6 +123,7 @@ export const UserList = ({ users }: UserListProps) => {
                 <TableRow>
                   <TableHead>Name</TableHead>
                   <TableHead>Roll Number</TableHead>
+                  <TableHead>Department</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Brigade</TableHead>
                   <TableHead>Added On</TableHead>
@@ -123,6 +135,11 @@ export const UserList = ({ users }: UserListProps) => {
                   <TableRow key={user.id}>
                     <TableCell className="font-medium">{user.fullName}</TableCell>
                     <TableCell>{user.rollNumber}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="text-xs">
+                        {getDepartmentCode(user.rollNumber)}
+                      </Badge>
+                    </TableCell>
                     <TableCell>{user.email}</TableCell>
                     <TableCell>
                       <Badge className={getBrigadeColor(user.brigadeName)}>

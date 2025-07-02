@@ -9,22 +9,34 @@ export const Dashboard = () => {
   const { users } = useUsersData();
   const { attendance } = useAttendanceData();
 
+  // Get ongoing events (events that have at least one day that is today or in the future)
+  const ongoingEvents = useMemo(() => {
+    const today = new Date();
+    return events.filter(event => 
+      event.days.some(day => {
+        const eventDay = new Date(day.date);
+        return eventDay >= new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      })
+    );
+  }, [events]);
+
+  // Filter attendance to only include records from ongoing events
+  const ongoingAttendance = useMemo(() => {
+    const ongoingEventIds = new Set(ongoingEvents.map(e => e.id));
+    return attendance.filter(record => ongoingEventIds.has(record.eventId));
+  }, [attendance, ongoingEvents]);
+
   const stats = useMemo(() => {
-    const totalEvents = events.length;
+    const totalEvents = ongoingEvents.length;
     const totalUsers = users.length;
     
-    // Debug: Log the attendance data to see what's in the database
-    console.log('All attendance records:', attendance);
-    console.log('Present attendance records:', attendance.filter(record => record.isPresent));
+    // Calculate total attendance from actual attendance records marked as present for ongoing events
+    const totalAttendance = ongoingAttendance.filter(record => record.isPresent).length;
     
-    // Calculate total attendance from actual attendance records marked as present
-    const totalAttendance = attendance.filter(record => record.isPresent).length;
-    
-    // Calculate total possible attendance slots
-    // This should be: total users × total active sessions across all event days
+    // Calculate total possible attendance slots for ongoing events only
     let totalPossibleAttendance = 0;
     
-    events.forEach(event => {
+    ongoingEvents.forEach(event => {
       event.days.forEach(day => {
         let activeSessions = 0;
         if (day.fnSession.isActive) activeSessions++;
@@ -33,14 +45,9 @@ export const Dashboard = () => {
       });
     });
     
-    console.log('Total possible attendance slots:', totalPossibleAttendance);
-    console.log('Total present attendance:', totalAttendance);
-    
     const averageAttendance = totalPossibleAttendance > 0 
       ? Math.round((totalAttendance / totalPossibleAttendance) * 100) 
       : 0;
-
-    console.log('Calculated average attendance:', averageAttendance);
 
     return {
       totalEvents,
@@ -48,30 +55,30 @@ export const Dashboard = () => {
       totalAttendance,
       averageAttendance
     };
-  }, [events, users, attendance]);
+  }, [ongoingEvents, users, ongoingAttendance]);
 
   const sessionData = useMemo(() => {
-    return events.map(event => ({
+    return ongoingEvents.map(event => ({
       name: event.name.length > 15 ? event.name.substring(0, 15) + '...' : event.name,
-      fn: attendance.filter(record => 
+      fn: ongoingAttendance.filter(record => 
         record.eventId === event.id && 
         record.sessionType === 'FN' && 
         record.isPresent
       ).length,
-      an: attendance.filter(record => 
+      an: ongoingAttendance.filter(record => 
         record.eventId === event.id && 
         record.sessionType === 'AN' && 
         record.isPresent
       ).length
     }));
-  }, [events, attendance]);
+  }, [ongoingEvents, ongoingAttendance]);
 
   const brigadeData = useMemo(() => {
     const brigadeMap = new Map();
     const colors = ['#3b82f6', '#10b981', '#8b5cf6', '#f59e0b', '#ef4444'];
     
     users.forEach(user => {
-      const userAttendance = attendance.filter(record => 
+      const userAttendance = ongoingAttendance.filter(record => 
         record.userId === user.id && record.isPresent
       ).length;
       
@@ -84,7 +91,7 @@ export const Dashboard = () => {
       attendance,
       color: colors[index % colors.length]
     }));
-  }, [users, attendance]);
+  }, [users, ongoingAttendance]);
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 lg:p-6">
@@ -97,17 +104,8 @@ export const Dashboard = () => {
             </div>
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-              <p className="text-gray-600">Comprehensive overview of brigade lead attendance and performance metrics</p>
+              <p className="text-gray-600">Overview of ongoing events and brigade lead attendance metrics</p>
             </div>
-          </div>
-          
-          {/* Debug Info - Remove this after checking */}
-          <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-            <p className="text-sm text-yellow-800">
-              <strong>Debug Info:</strong> Total attendance records in DB: {attendance.length} | 
-              Present records: {attendance.filter(r => r.isPresent).length} | 
-              Check browser console for more details
-            </p>
           </div>
           
           {/* Quick Metrics */}
@@ -115,7 +113,7 @@ export const Dashboard = () => {
             {[
               { 
                 icon: Calendar, 
-                label: 'Total Events', 
+                label: 'Ongoing Events', 
                 value: stats.totalEvents, 
                 color: 'icon-blue',
                 bgColor: 'bg-blue-light'
