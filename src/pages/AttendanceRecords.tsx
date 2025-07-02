@@ -160,7 +160,7 @@ export const AttendanceRecords = () => {
     
     const filename = `${eventName.replace(/\s+/g, '_')}_${dateName}_${brigadeName}_${sessionName}`;
     
-    exportAttendanceData(exportData, filename, eventName);
+    exportAttendanceData(exportData, filename);
     toast.success(`Exported ${exportData.length} attendance records with Overall Data and Stats sheets`);
   };
 
