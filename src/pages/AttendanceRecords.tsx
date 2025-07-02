@@ -4,8 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Download, Filter, FileText, Users, Activity, Calendar, AlertTriangle } from 'lucide-react';
-import { useEventsData, useUsersData, useAttendanceData } from '@/hooks/useFirestore';
+import { Download, Filter, FileText, Users, Activity, Calendar, AlertTriangle, Trash2 } from 'lucide-react';
+import { useEventsData, useUsersData, useAttendanceData, useFirestore } from '@/hooks/useFirestore';
 import { exportAttendanceData } from '@/utils/excelUtils';
 import { format, isSameDay } from 'date-fns';
 import { toast } from 'sonner';
@@ -18,6 +18,7 @@ export const AttendanceRecords = () => {
   const { events } = useEventsData();
   const { users } = useUsersData();
   const { attendance } = useAttendanceData();
+  const { deleteDuplicateAttendance, loading: deleteLoading } = useFirestore();
 
   // Get ongoing events (events that have at least one day that is today or in the future)
   const ongoingEvents = useMemo(() => {
@@ -224,6 +225,28 @@ export const AttendanceRecords = () => {
     };
   }, [attendance, selectedEventDate, selectedSession, users]);
 
+  const handleDeleteDuplicates = async () => {
+    if (!debugInfo || debugInfo.duplicates === 0) {
+      toast.error('No duplicates found to delete');
+      return;
+    }
+
+    if (!confirm(`Are you sure you want to delete ${debugInfo.duplicates} duplicate attendance records? This action cannot be undone.`)) {
+      return;
+    }
+
+    // Get the IDs of duplicate records (keep the original, delete the duplicates)
+    const duplicateIds = debugInfo.duplicateDetails.map(dup => dup.duplicate.id);
+
+    const result = await deleteDuplicateAttendance(duplicateIds);
+    
+    if (result.success) {
+      toast.success(`Successfully deleted ${duplicateIds.length} duplicate records`);
+    } else {
+      toast.error('Failed to delete duplicate records');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 p-4 lg:p-6">
       <div className="max-w-7xl mx-auto space-y-6">
@@ -252,9 +275,29 @@ export const AttendanceRecords = () => {
           {/* Debug Info */}
           {debugInfo && debugInfo.duplicates > 0 && (
             <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-              <div className="flex items-center space-x-2 mb-2">
-                <AlertTriangle className="h-5 w-5 text-red-600" />
-                <h3 className="font-medium text-red-800">Data Issue Detected</h3>
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center space-x-2">
+                  <AlertTriangle className="h-5 w-5 text-red-600" />
+                  <h3 className="font-medium text-red-800">Data Issue Detected</h3>
+                </div>
+                <Button
+                  onClick={handleDeleteDuplicates}
+                  disabled={deleteLoading}
+                  size="sm"
+                  className="bg-red-600 hover:bg-red-700 text-white"
+                >
+                  {deleteLoading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
+                      Deleting...
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Delete Duplicates
+                    </>
+                  )}
+                </Button>
               </div>
               <p className="text-red-700 text-sm">
                 Found {debugInfo.duplicates} duplicate attendance records for {selectedEventDate} {selectedSession} session. 
@@ -262,10 +305,10 @@ export const AttendanceRecords = () => {
               </p>
               <details className="mt-2">
                 <summary className="text-red-700 text-sm cursor-pointer">View duplicate details</summary>
-                <div className="mt-2 text-xs text-red-600">
+                <div className="mt-2 text-xs text-red-600 max-h-32 overflow-y-auto">
                   {debugInfo.duplicateDetails.map((dup, index) => (
                     <div key={index} className="mb-1">
-                      Duplicate {index + 1}: User {dup.duplicate.userId} has multiple records
+                      Duplicate {index + 1}: User {dup.duplicate.userId} has multiple records (Original: {dup.original.id}, Duplicate: {dup.duplicate.id})
                     </div>
                   ))}
                 </div>
