@@ -22,9 +22,8 @@ export const Header = () => {
           </div>
           <div>
             <h1 className="text-lg lg:text-xl font-bold text-gray-900">
-              Brigade Attendance Portal
+              Mark Brigade Leads Attendance
             </h1>
-            <p className="text-xs text-gray-600 font-medium">Lead & Co-Lead Management System</p>
           </div>
         </div>
         

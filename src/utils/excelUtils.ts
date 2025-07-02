@@ -69,12 +69,7 @@ const getDepartmentCode = (rollNumber: string): string => {
   if (!rollNumber || rollNumber.length < 5) {
     return 'UNKNOWN';
   }
-  
-  // Check if third character is 'B' (indicating it's a valid format like 25BBA001)
-  if (rollNumber.charAt(2) !== 'B') {
-    return 'UNKNOWN';
-  }
-  
+
   // Extract the department code (characters 2-4, e.g., "BBA" from "25BBA001")
   const deptCode = rollNumber.substring(2, 5);
   
@@ -83,14 +78,52 @@ const getDepartmentCode = (rollNumber: string): string => {
     return 'CW';
   }
   
+  // Check if third character is 'B' (indicating it's a valid format like 25BBA001)
+  if (rollNumber.charAt(2) !== 'B') {
+    return 'UNKNOWN';
+  }
+  
   return deptCode;
 };
 
-export const exportAttendanceData = (data: any[], filename: string) => {
+// Helper function to format date as "Jul 2, 2025"
+const formatDateForExcel = (date: Date): string => {
+  return date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric'
+  });
+};
+
+// Helper function to format datetime as "Jul 2, 08:58"
+const formatDateTimeForExcel = (date: Date): string => {
+  return date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric'
+  }) + ', ' + date.toLocaleTimeString('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  });
+};
+
+export const exportAttendanceData = (data: any[], filename: string, eventName?: string) => {
+  // Prepare data with updated format
+  const formattedData = data.map(record => ({
+    'Date': formatDateForExcel(new Date(record['Date'])),
+    'Full Name': record['Full Name'],
+    'Roll Number': record['Roll Number'],
+    'Brigade': record['Brigade'],
+    'Status': record['Status'],
+    'Marked At': record['Marked At'] !== 'N/A' ? 
+      formatDateTimeForExcel(new Date(record['Marked At'])) : 'N/A',
+    'Marked By': record['Marked By']
+  }));
+
   // Group data by department code
   const departmentGroups = new Map<string, any[]>();
   
-  data.forEach(record => {
+  formattedData.forEach(record => {
     const rollNumber = record['Roll Number'] || '';
     const deptCode = getDepartmentCode(rollNumber);
     
@@ -100,8 +133,31 @@ export const exportAttendanceData = (data: any[], filename: string) => {
     departmentGroups.get(deptCode)!.push(record);
   });
   
+  // Sort data within each department by Roll Number
+  departmentGroups.forEach((records, deptCode) => {
+    records.sort((a, b) => {
+      const rollA = a['Roll Number'] || '';
+      const rollB = b['Roll Number'] || '';
+      return rollA.localeCompare(rollB);
+    });
+  });
+  
   // Create workbook
   const wb = XLSX.utils.book_new();
+  
+  // Add Overall Data sheet first (sorted by Roll Number)
+  const sortedOverallData = [...formattedData].sort((a, b) => {
+    const rollA = a['Roll Number'] || '';
+    const rollB = b['Roll Number'] || '';
+    return rollA.localeCompare(rollB);
+  });
+  const overallWs = XLSX.utils.json_to_sheet(sortedOverallData);
+  XLSX.utils.book_append_sheet(wb, overallWs, 'Overall Data');
+  
+  // Create stats data (without attendance percentage)
+  const statsData = createStatsData(formattedData);
+  const statsWs = XLSX.utils.json_to_sheet(statsData);
+  XLSX.utils.book_append_sheet(wb, statsWs, 'Stats');
   
   // Sort department codes for consistent ordering
   const sortedDeptCodes = Array.from(departmentGroups.keys()).sort();
@@ -116,13 +172,56 @@ export const exportAttendanceData = (data: any[], filename: string) => {
     XLSX.utils.book_append_sheet(wb, ws, sheetName);
   });
   
-  // If no valid departments found, create a single sheet with all data
-  if (departmentGroups.size === 0 || (departmentGroups.size === 1 && departmentGroups.has('UNKNOWN'))) {
-    const ws = XLSX.utils.json_to_sheet(data);
-    XLSX.utils.book_append_sheet(wb, ws, 'All Data');
-  }
-  
   XLSX.writeFile(wb, `${filename}.xlsx`);
+};
+
+// Function to create stats data (without attendance percentage)
+const createStatsData = (data: any[]) => {
+  const brigadeStats = new Map<string, {
+    total: number;
+    present: number;
+    absent: number;
+    notMarked: number;
+  }>();
+
+  // Initialize brigade stats
+  data.forEach(record => {
+    const brigade = record['Brigade'];
+    if (!brigadeStats.has(brigade)) {
+      brigadeStats.set(brigade, {
+        total: 0,
+        present: 0,
+        absent: 0,
+        notMarked: 0
+      });
+    }
+    
+    const stats = brigadeStats.get(brigade)!;
+    stats.total++;
+    
+    switch (record['Status']) {
+      case 'Present':
+        stats.present++;
+        break;
+      case 'Absent':
+        stats.absent++;
+        break;
+      case 'Not Marked':
+        stats.notMarked++;
+        break;
+    }
+  });
+
+  // Convert to array format for Excel (without attendance percentage)
+  const statsArray = Array.from(brigadeStats.entries()).map(([brigade, stats]) => ({
+    'Brigade': brigade,
+    'Total Count': stats.total,
+    'Present': stats.present,
+    'Absent': stats.absent,
+    'Not Marked': stats.notMarked
+  }));
+
+  return statsArray;
 };
 
 // New function specifically for exporting user lists with department sheets
@@ -147,6 +246,15 @@ export const exportUserListByDepartment = (users: any[], filename: string) => {
           user.createdAt.toISOString().split('T')[0] : 
           user.createdAt) : 
         (user['Created At'] || 'N/A')
+    });
+  });
+  
+  // Sort data within each department by Roll Number
+  departmentGroups.forEach((records, deptCode) => {
+    records.sort((a, b) => {
+      const rollA = a['Roll Number'] || '';
+      const rollB = b['Roll Number'] || '';
+      return rollA.localeCompare(rollB);
     });
   });
   
@@ -178,7 +286,11 @@ export const exportUserListByDepartment = (users: any[], filename: string) => {
           user.createdAt.toISOString().split('T')[0] : 
           user.createdAt) : 
         'N/A'
-    }));
+    })).sort((a, b) => {
+      const rollA = a['Roll Number'] || '';
+      const rollB = b['Roll Number'] || '';
+      return rollA.localeCompare(rollB);
+    });
     const ws = XLSX.utils.json_to_sheet(userData);
     XLSX.utils.book_append_sheet(wb, ws, 'All Users');
   }

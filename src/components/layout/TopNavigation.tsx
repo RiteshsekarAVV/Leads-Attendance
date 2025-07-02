@@ -1,4 +1,4 @@
-import { Calendar, Users, BarChart3, CheckSquare, FileText } from 'lucide-react';
+import { Calendar, Users, CheckSquare, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface TopNavigationProps {
@@ -8,11 +8,11 @@ interface TopNavigationProps {
 
 const navigation = [
   { 
-    id: 'dashboard', 
-    name: 'Dashboard', 
-    icon: BarChart3, 
-    color: 'icon-blue',
-    bgColor: 'bg-blue-light'
+    id: 'attendance', 
+    name: 'Mark Attendance', 
+    icon: CheckSquare, 
+    color: 'icon-orange',
+    bgColor: 'bg-orange-light'
   },
   { 
     id: 'events', 
@@ -27,13 +27,6 @@ const navigation = [
     icon: Users, 
     color: 'icon-purple',
     bgColor: 'bg-purple-light'
-  },
-  { 
-    id: 'attendance', 
-    name: 'Mark Attendance', 
-    icon: CheckSquare, 
-    color: 'icon-orange',
-    bgColor: 'bg-orange-light'
   },
   { 
     id: 'attendance-records', 

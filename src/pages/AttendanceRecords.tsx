@@ -131,12 +131,10 @@ export const AttendanceRecords = () => {
     return records;
   }, [ongoingEvents, users, attendance, selectedEventDate, selectedBrigade, selectedSession]);
 
-  // Prepare data for export with department-wise sheets
+  // Prepare data for export with updated format
   const exportData = useMemo(() => {
     return allRecords.map(record => ({
-      'Event Name': record.eventName,
       'Date': format(record.eventDate, 'yyyy-MM-dd'),
-      'Session': record.sessionType,
       'Full Name': record.userName,
       'Roll Number': record.userRollNumber,
       'Brigade': record.userBrigade,
@@ -155,14 +153,15 @@ export const AttendanceRecords = () => {
     }
     
     // Generate filename based on filters
-    const dateName = selectedEventDate === 'all' ? 'All Dates' : selectedEventDate;
-    const brigadeName = selectedBrigade === 'all' ? 'All Brigades' : selectedBrigade;
+    const eventName = allRecords.length > 0 ? allRecords[0].eventName : 'Event';
+    const dateName = selectedEventDate === 'all' ? 'All_Dates' : selectedEventDate;
+    const brigadeName = selectedBrigade === 'all' ? 'All_Brigades' : selectedBrigade.replace(/\s+/g, '_');
     const sessionName = selectedSession;
     
-    const filename = `Attendance_${dateName}_${brigadeName}_${sessionName}`;
+    const filename = `${eventName.replace(/\s+/g, '_')}_${dateName}_${brigadeName}_${sessionName}`;
     
-    exportAttendanceData(exportData, filename);
-    toast.success(`Exported ${exportData.length} attendance records with department-wise sheets`);
+    exportAttendanceData(exportData, filename, eventName);
+    toast.success(`Exported ${exportData.length} attendance records with Overall Data and Stats sheets`);
   };
 
   const clearFilters = () => {
@@ -263,12 +262,12 @@ export const AttendanceRecords = () => {
                 </h1>
               </div>
               <p className="text-gray-600 max-w-2xl">
-                View, filter, and export attendance records for ongoing events (Export creates department-wise sheets)
+                View, filter, and export attendance records for ongoing events (Export includes Overall Data and Stats sheets)
               </p>
             </div>
             <Button onClick={handleExport} className="bg-indigo-600 hover:bg-indigo-700 text-white">
               <Download className="h-4 w-4 mr-2" />
-              Export by Dept ({allRecords.length})
+              Export ({allRecords.length})
             </Button>
           </div>
           
@@ -495,9 +494,7 @@ export const AttendanceRecords = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Event</TableHead>
                       <TableHead>Date</TableHead>
-                      <TableHead>Session</TableHead>
                       <TableHead>Name</TableHead>
                       <TableHead>Roll Number</TableHead>
                       <TableHead>Brigade</TableHead>
@@ -508,16 +505,8 @@ export const AttendanceRecords = () => {
                   <TableBody>
                     {allRecords.map((record) => (
                       <TableRow key={record.id} className={!record.hasRecord ? 'bg-yellow-50' : ''}>
-                        <TableCell className="font-medium">
-                          {record.eventName}
-                        </TableCell>
                         <TableCell>
                           {format(record.eventDate, 'MMM d, yyyy')}
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className="text-xs">
-                            {record.sessionType}
-                          </Badge>
                         </TableCell>
                         <TableCell>{record.userName}</TableCell>
                         <TableCell>{record.userRollNumber}</TableCell>
